@@ -1,0 +1,36 @@
+.results-progress {
+  --progress: 0;
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.results-progress svg {
+  width: 36px;
+  height: 36px;
+  transform: rotate(-90deg);
+}
+
+.results-progress .track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 4;
+}
+
+.results-progress .bar {
+  fill: none;
+  stroke: var(--brand-pink-soft);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 125.6;
+  stroke-dashoffset: calc(125.6 * (1 - var(--progress)));
+}

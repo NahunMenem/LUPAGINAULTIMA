@@ -1,0 +1,231 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ===========================
+   JULIETA STUDIO – LIGHT
+   =========================== */
+:root {
+  --radius: 0.9rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+
+  /* Marca rosada */
+  --primary: oklch(0.78 0.11 350);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.97 0.01 300);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+
+  --muted: oklch(0.97 0.01 300);
+  --muted-foreground: oklch(0.52 0.02 285.938);
+
+  --accent: oklch(0.94 0.03 350);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.78 0.11 350);
+
+  /* Extras UI */
+  --hero-bg: oklch(0.99 0.02 350);
+  --brand-pink-soft: oklch(0.94 0.03 350);
+}
+
+/* ===========================
+   JULIETA STUDIO – DARK
+   (charcoal premium)
+   =========================== */
+.dark {
+  --background: oklch(0.17 0.01 285.823);
+  --foreground: oklch(0.985 0 0);
+
+  --card: oklch(0.21 0.01 285.885);
+  --card-foreground: oklch(0.985 0 0);
+
+  --popover: oklch(0.21 0.01 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+
+  --primary: oklch(0.78 0.11 350);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.25 0.01 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+
+  --muted: oklch(0.25 0.01 286.033);
+  --muted-foreground: oklch(0.74 0.02 286.067);
+
+  --accent: oklch(0.28 0.03 350);
+  --accent-foreground: oklch(0.985 0 0);
+
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.78 0.11 350);
+
+  --hero-bg: oklch(0.22 0.01 285.885);
+  --brand-pink-soft: oklch(0.26 0.03 350);
+}
+
+/* ===========================
+   HELPERS VISUALES
+   =========================== */
+.container-page {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+/* ✅ SOFT GRID (NO APAGA CONTENIDO) */
+.soft-grid {
+  position: relative;
+}
+
+.soft-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    color-mix(in oklch, var(--foreground) 8%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  background-position: center;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.dark .soft-grid::before {
+  opacity: 0.14;
+}
+
+/* Glow rosado */
+.glow {
+  position: absolute;
+  inset: -120px;
+  background: radial-gradient(
+    600px circle at 30% 20%,
+    color-mix(in oklch, white 0%, oklch(0.78 0.11 350) 25%),
+    transparent 60%
+  );
+  pointer-events: none;
+  filter: blur(14px);
+}
+
+::selection {
+  background: var(--brand-pink-soft);
+}
+
+/* Swiper pagination – Julieta Studio (rosado) */
+.js-testimonials-swiper .swiper-pagination-bullet {
+  width: 8px;
+  height: 8px;
+  background: color-mix(in oklab, var(--brand-pink-soft) 55%, transparent);
+  opacity: 1;
+  transform: scale(0.92);
+  transition: transform 200ms ease, background-color 200ms ease;
+}
+
+.js-testimonials-swiper .swiper-pagination-bullet-active {
+  background: var(--brand-pink-soft);
+  transform: scale(1.15);
+}
+
+.results-swiper {
+  position: relative;
+}
+
+.results-progress {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  z-index: 10;
+}
+
+.results-progress svg {
+  width: 44px;
+  height: 44px;
+  transform: rotate(-90deg);
+}
+
+.results-progress .track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 4;
+}
+
+.results-progress .bar {
+  fill: none;
+  stroke: var(--brand-pink-soft);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 125.6;
+  stroke-dashoffset: calc(125.6 * var(--progress, 0));
+  transition: stroke-dashoffset 120ms linear;
+}
+
+.results-progress span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.06);
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
