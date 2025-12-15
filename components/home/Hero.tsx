@@ -148,10 +148,6 @@ export default function Hero() {
                 priority
               />
             </div>
-
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              Podés reemplazar la imagen por una foto real del estudio.
-            </p>
           </motion.div>
         </motion.div>
       </div>
