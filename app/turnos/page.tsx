@@ -1,4 +1,4 @@
-
+//app/turnos/page.tsx
 import type { Metadata } from "next";
 import SectionTitle from "@/components/shared/SectionTitle";
 import TurnosWizard from "@/components/turnos/TurnosWizard";

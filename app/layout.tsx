@@ -1,20 +1,13 @@
+//app/layout.tsx
 
 import type { Metadata } from "next";
 import "./globals.css";
 
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import WhatsAppFloatingButton from "@/components/shared/WhatsAppFloatingButton";
-import ScrollToTopButton from "@/components/shared/ScrollToTopButton";
-
 import { ThemeProvider } from "next-themes";
-import {
-  Playfair_Display,
-  Pinyon_Script,
-  Poppins,
-} from "next/font/google";
+import SiteChrome from "@/components/layout/SiteChrome";
 
-/* Serif elegante (opcional, textos editoriales) */
+import { Playfair_Display, Pinyon_Script, Poppins } from "next/font/google";
+
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -22,7 +15,6 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-/* Script exacta del logo */
 const pinyon = Pinyon_Script({
   subsets: ["latin"],
   weight: "400",
@@ -30,7 +22,6 @@ const pinyon = Pinyon_Script({
   display: "swap",
 });
 
-/* Sans moderna para UI / Nav */
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -40,15 +31,10 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "Julieta Studio | Estética",
-  description:
-    "Micropigmentación, pestañas, cejas y tratamientos faciales. Reservá tu turno.",
+  description: "Micropigmentación, pestañas, cejas y tratamientos faciales. Reservá tu turno.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="es"
@@ -56,20 +42,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-        >
-          <Navbar />
-
-          <main className="min-h-screen">
-            {children}
-          </main>
-
-          <Footer />
-          <WhatsAppFloatingButton />
-          <ScrollToTopButton />
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <SiteChrome>{children}</SiteChrome>
         </ThemeProvider>
       </body>
     </html>
