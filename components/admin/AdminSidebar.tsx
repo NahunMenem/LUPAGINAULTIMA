@@ -1,4 +1,5 @@
 //components/admin/AdminSidebar.tsx
+// components/admin/AdminSidebar.tsx
 "use client";
 
 import Link from "next/link";
@@ -17,6 +18,9 @@ import {
   Menu,
   LogOut,
 } from "lucide-react";
+
+// Si NO tenés react-hot-toast, borrá estas 2 líneas:
+import toast from "react-hot-toast";
 
 type Props = {
   collapsed: boolean;
@@ -64,8 +68,23 @@ export default function AdminSidebar({ collapsed, setCollapsed }: Props) {
   const router = useRouter();
 
   const logout = () => {
-    document.cookie = "js_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    router.replace("/admin/login");
+    // 1) borrar cookie
+    document.cookie = "js_role=; path=/; max-age=0";
+
+    // 2) limpiar storage (pro)
+    try {
+      // Si querés resetear la data demo del panel, dejalo:
+      // localStorage.removeItem("js_admin_db_v1");
+
+      // Si NO querés borrar los datos demo del panel, dejá solo esto:
+      sessionStorage.clear();
+    } catch {}
+
+    // 3) toast lindo (si instalás react-hot-toast)
+    toast.success("Sesión cerrada");
+
+    // 4) redirigir a la home
+    router.replace("/");
   };
 
   return (
@@ -76,7 +95,7 @@ export default function AdminSidebar({ collapsed, setCollapsed }: Props) {
           collapsed ? "w-[84px]" : "w-[280px]"
         )}
       >
-        <div className={cn("flex h-full flex-col", collapsed ? "p-3" : "p-3")}>
+        <div className="flex h-full flex-col p-3">
           <div className={cn("flex items-center justify-between gap-3", collapsed && "justify-center")}>
             <div className={cn("flex items-center gap-3", collapsed && "hidden")}>
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[linear-gradient(135deg,rgba(255,105,180,0.35),rgba(255,182,193,0.35))] ring-1 ring-pink-500/20">
@@ -139,10 +158,10 @@ export default function AdminSidebar({ collapsed, setCollapsed }: Props) {
                   <div className="text-xs text-zinc-500">Panel admin</div>
                 </div>
 
-                <div className="p-4 grid gap-3">
+                <div className="grid gap-3 p-4">
                   <NavList collapsed={false} />
 
-                  <Button variant="outline" className="rounded-2xl justify-start" onClick={logout}>
+                  <Button variant="outline" className="justify-start rounded-2xl" onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Cerrar sesión
                   </Button>

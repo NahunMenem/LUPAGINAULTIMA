@@ -10,7 +10,10 @@ export function middleware(req: NextRequest) {
 
   if (!pathname.startsWith(ADMIN_PREFIX)) return NextResponse.next();
 
-  if (pathname === LOGIN_PATH) return NextResponse.next();
+  // permitir login siempre
+  if (pathname === LOGIN_PATH || pathname.startsWith(`${LOGIN_PATH}/`)) {
+    return NextResponse.next();
+  }
 
   const role = req.cookies.get("js_role")?.value;
 
