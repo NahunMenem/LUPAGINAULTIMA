@@ -1,5 +1,4 @@
 //components/admin/servicios/ServiciosList.tsx
-//components/admin/servicios/ServiciosList.tsx
 "use client";
 
 import Link from "next/link";
