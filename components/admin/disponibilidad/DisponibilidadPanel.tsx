@@ -1,16 +1,22 @@
-
 //components/admin/disponibilidad/DisponibilidadPanel.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { computeAvailability, getServices, type Service } from "@/lib/adminStore";
 import { toISODate, formatHumanDate } from "@/lib/date";
 import ConfirmarSlotDialog from "@/components/admin/disponibilidad/ConfirmarSlotDialog";
+import { getDisponibilidad, listServicios, type Service } from "@/lib/apiTurnos";
+import { cn } from "@/lib/utils";
 
 export default function DisponibilidadPanel() {
   const [services, setServices] = useState<Service[]>([]);
@@ -18,38 +24,68 @@ export default function DisponibilidadPanel() {
   const [dateISO, setDateISO] = useState(() => toISODate(new Date()));
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
+  const [slots, setSlots] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    const list = getServices().filter((s) => s.active);
-    setServices(list);
-    setServiceId(list[0]?.id ?? "");
+    const run = async () => {
+      const list = await listServicios();
+      setServices(list);
+      setServiceId(String(list[0]?.id ?? ""));
+    };
+    run();
   }, []);
 
-  const service = useMemo(() => services.find((s) => s.id === serviceId) ?? null, [services, serviceId]);
+  const service = useMemo(
+    () => services.find((s) => String(s.id) === serviceId) ?? null,
+    [services, serviceId]
+  );
 
-  const availability = useMemo(() => {
-    if (!serviceId) return { slots: [], taken: [] };
-    return computeAvailability(serviceId, dateISO);
+  const human = useMemo(
+    () => formatHumanDate(new Date(dateISO + "T00:00:00")),
+    [dateISO]
+  );
+
+  const loadAvailability = async () => {
+    if (!serviceId || !dateISO) return;
+    setLoading(true);
+    try {
+      const data = await getDisponibilidad(Number(serviceId), dateISO);
+      setSlots(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAvailability();
   }, [serviceId, dateISO]);
 
-  const human = useMemo(() => formatHumanDate(new Date(dateISO + "T00:00:00")), [dateISO]);
+  const cardBase =
+    "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
+  const inputBase =
+    "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:border-emerald-400/60";
 
   return (
     <div className="grid gap-6">
-      <SectionTitle title="Disponibilidad" subtitle="Seleccioná un servicio y una fecha para ver los horarios disponibles." />
+      <SectionTitle
+        title="Disponibilidad"
+        subtitle="Seleccioná un servicio y una fecha para ver los horarios disponibles."
+      />
 
-      <Card className="rounded-3xl border bg-white/70 shadow-sm">
+      <Card className={cardBase}>
         <CardContent className="p-4 md:p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
               <div className="text-sm font-medium text-zinc-900">Servicio</div>
               <Select value={serviceId} onValueChange={setServiceId}>
-                <SelectTrigger className="rounded-2xl">
+                <SelectTrigger className="rounded-2xl border-zinc-200/80 bg-white/90 shadow-sm">
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
                 <SelectContent>
                   {services.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} · {s.durationMin} min
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.nombre} · {s.duracion_minutos} min
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -58,28 +94,44 @@ export default function DisponibilidadPanel() {
 
             <div className="grid gap-2">
               <div className="text-sm font-medium text-zinc-900">Fecha</div>
-              <Input type="date" value={dateISO} onChange={(e) => setDateISO(e.target.value)} className="rounded-2xl" />
-              <div className="text-xs text-zinc-500 capitalize">{human}</div>
+              <Input
+                type="date"
+                value={dateISO}
+                onChange={(e) => setDateISO(e.target.value)}
+                className={inputBase}
+              />
+              <div className="text-xs text-zinc-600 capitalize">{human}</div>
             </div>
           </div>
 
           <div className="mt-6">
-            <div className="text-sm font-semibold text-zinc-900">Horarios disponibles</div>
+            <div className="text-sm font-semibold text-zinc-900">
+              Horarios disponibles
+            </div>
 
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
-              {availability.slots.map((t) => (
-                <Button
-                  key={t}
-                  variant="outline"
-                  className="h-20 rounded-2xl border-emerald-500/50 text-emerald-700 hover:bg-emerald-50"
-                  onClick={() => setSelectedTime(t)}
-                >
-                  {t}
-                </Button>
-              ))}
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              {loading ? (
+                <div className="md:col-span-3 rounded-2xl border border-zinc-200 bg-white/80 p-6 text-sm text-zinc-600">
+                  Cargando…
+                </div>
+              ) : (
+                slots.map((t) => (
+                  <Button
+                    key={t}
+                    variant="outline"
+                    className={cn(
+                      "h-16 rounded-2xl border-emerald-500/40 bg-white/85 text-emerald-800 shadow-sm",
+                      "font-semibold hover:bg-emerald-50/70 hover:text-emerald-900"
+                    )}
+                    onClick={() => setSelectedTime(t)}
+                  >
+                    {t}
+                  </Button>
+                ))
+              )}
 
-              {availability.slots.length === 0 && (
-                <div className="md:col-span-3 rounded-2xl border bg-white p-6 text-sm text-zinc-600">
+              {!loading && slots.length === 0 && (
+                <div className="md:col-span-3 rounded-2xl border border-zinc-200 bg-white/80 p-6 text-sm text-zinc-600">
                   No hay disponibilidad (revisá horarios configurados en “Horarios”).
                 </div>
               )}
@@ -89,12 +141,15 @@ export default function DisponibilidadPanel() {
           <ConfirmarSlotDialog
             open={!!selectedTime}
             onOpenChange={(v) => !v && setSelectedTime(null)}
-            serviceName={service?.name ?? ""}
+            serviceName={service?.nombre ?? ""}
             dateHuman={human}
             dateISO={dateISO}
             time={selectedTime ?? ""}
             serviceId={serviceId}
-            onDone={() => setSelectedTime(null)}
+            onDone={() => {
+              setSelectedTime(null);
+              loadAvailability();
+            }}
           />
         </CardContent>
       </Card>

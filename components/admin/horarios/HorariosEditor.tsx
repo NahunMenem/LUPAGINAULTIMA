@@ -6,74 +6,112 @@ import { useEffect, useMemo, useState } from "react";
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { deleteRule, getRules, getService, type ScheduleRule } from "@/lib/adminStore";
 import { WEEKDAYS } from "@/lib/date";
-import { Trash2 } from "lucide-react";
+import {
+  horariosServicio,
+  listServicios,
+  type Horario,
+  type Service,
+  hhmm,
+} from "@/lib/apiTurnos";
+import { Badge } from "@/components/ui/badge";
 
 export default function HorariosEditor({ serviceId }: { serviceId: string }) {
-  const [rules, setRules] = useState<ScheduleRule[]>([]);
-  const service = useMemo(() => getService(serviceId), [serviceId]);
+  const [service, setService] = useState<Service | null>(null);
+  const [rules, setRules] = useState<Horario[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const load = () => setRules(getRules(serviceId).sort((a, b) => a.weekday - b.weekday || a.from.localeCompare(b.from)));
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [sv, hs] = await Promise.all([
+        listServicios(),
+        horariosServicio(Number(serviceId)),
+      ]);
+      setService(sv.find((x) => String(x.id) === String(serviceId)) ?? null);
+      setRules(
+        hs.sort(
+          (a, b) =>
+            a.dia_semana - b.dia_semana ||
+            hhmm(a.hora_inicio).localeCompare(hhmm(b.hora_inicio))
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     load();
   }, [serviceId]);
 
-  if (!service) {
-    return (
-      <div className="rounded-2xl border bg-white p-6 text-sm text-zinc-600">
-        Servicio no encontrado.
-      </div>
-    );
-  }
+  const title = useMemo(
+    () => `Horarios · ${service?.nombre ?? "Servicio"}`,
+    [service?.nombre]
+  );
+
+  const cardBase =
+    "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
 
   return (
     <div className="grid gap-6">
-      <SectionTitle title={`Horarios · ${service.name}`} subtitle="Rangos configurados por día para este servicio." />
+      <SectionTitle
+        title={title}
+        subtitle="Rangos configurados por día para este servicio."
+      />
 
-      <Card className="rounded-3xl border bg-white/70 shadow-sm">
+      <Card className={cardBase}>
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/admin/horarios">
-              <Button variant="outline" className="rounded-2xl">
+              <Button
+                variant="outline"
+                className="rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50"
+              >
                 Volver
               </Button>
             </Link>
             <Link href="/admin/horarios/nuevo">
-              <Button className="rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600">
+              <Button className="rounded-2xl bg-emerald-500 text-white shadow-sm hover:bg-emerald-600">
                 Nuevo horario
               </Button>
             </Link>
           </div>
 
           <div className="mt-4 grid gap-3">
-            {rules.map((r) => (
-              <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-4">
-                <div>
-                  <div className="text-sm font-semibold text-zinc-900">{WEEKDAYS[r.weekday]}</div>
-                  <div className="text-sm text-zinc-600">
-                    {r.from} - {r.to}
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="rounded-2xl"
-                  onClick={() => {
-                    deleteRule(r.id);
-                    load();
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar
-                </Button>
+            {loading ? (
+              <div className="rounded-2xl border border-zinc-200 bg-white/80 p-6 text-sm text-zinc-600">
+                Cargando…
               </div>
-            ))}
-
-            {rules.length === 0 && (
-              <div className="rounded-2xl border bg-white p-6 text-sm text-zinc-600">
+            ) : rules.length === 0 ? (
+              <div className="rounded-2xl border border-zinc-200 bg-white/80 p-6 text-sm text-zinc-600">
                 No hay horarios configurados todavía.
               </div>
+            ) : (
+              rules.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white/85 p-4 shadow-sm"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-sm font-semibold text-zinc-900">
+                        {WEEKDAYS[r.dia_semana]}
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="rounded-full border-zinc-300/70 bg-white text-zinc-700"
+                      >
+                        {hhmm(r.hora_inicio)} - {hhmm(r.hora_fin)}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-zinc-500">
+                    (Por ahora el backend no tiene endpoint para eliminar horarios)
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </CardContent>

@@ -6,10 +6,17 @@ import { useEffect, useMemo, useState } from "react";
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { createRule, getServices, type Service } from "@/lib/adminStore";
 import { WEEKDAYS } from "@/lib/date";
+import { crearHorario, listServicios, type Service } from "@/lib/apiTurnos";
+import { cn } from "@/lib/utils";
 
 export default function HorarioForm() {
   const [services, setServices] = useState<Service[]>([]);
@@ -17,32 +24,68 @@ export default function HorarioForm() {
   const [weekday, setWeekday] = useState<string>("0");
   const [from, setFrom] = useState("09:00");
   const [to, setTo] = useState("13:00");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const list = getServices().filter((s) => s.active);
-    setServices(list);
-    setServiceId(list[0]?.id ?? "");
+    const run = async () => {
+      const list = await listServicios();
+      setServices(list);
+      setServiceId(String(list[0]?.id ?? ""));
+    };
+    run();
   }, []);
 
-  const service = useMemo(() => services.find((s) => s.id === serviceId), [services, serviceId]);
+  const service = useMemo(
+    () => services.find((s) => String(s.id) === serviceId) ?? null,
+    [services, serviceId]
+  );
+
+  const save = async () => {
+    if (!serviceId || !service) return;
+    if (!from.trim() || !to.trim()) return;
+
+    setSaving(true);
+    try {
+      await crearHorario({
+        servicio_id: Number(serviceId),
+        dia_semana: Number(weekday),
+        hora_inicio: from,
+        hora_fin: to,
+      });
+
+      window.location.href = `/admin/horarios/${serviceId}`;
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "No se pudo guardar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cardBase =
+    "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
+  const inputBase =
+    "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:border-emerald-400/60";
 
   return (
     <div className="grid gap-6">
-      <SectionTitle title="Nuevo horario" subtitle="Configurá un rango para un servicio y un día de la semana." />
+      <SectionTitle
+        title="Nuevo horario"
+        subtitle="Configurá un rango para un servicio y un día de la semana."
+      />
 
-      <Card className="rounded-3xl border bg-white/70 shadow-sm">
+      <Card className={cardBase}>
         <CardContent className="p-4 md:p-6">
           <div className="grid gap-4">
             <div className="grid gap-2">
               <div className="text-sm font-medium text-zinc-900">Servicio</div>
               <Select value={serviceId} onValueChange={setServiceId}>
-                <SelectTrigger className="rounded-2xl">
+                <SelectTrigger className={cn("rounded-2xl bg-white/90 shadow-sm", "border-zinc-200/80")}>
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
                 <SelectContent>
                   {services.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} · {s.durationMin} min
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.nombre} · {s.duracion_minutos} min
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -52,7 +95,7 @@ export default function HorarioForm() {
             <div className="grid gap-2">
               <div className="text-sm font-medium text-zinc-900">Día</div>
               <Select value={weekday} onValueChange={setWeekday}>
-                <SelectTrigger className="rounded-2xl">
+                <SelectTrigger className={cn("rounded-2xl bg-white/90 shadow-sm", "border-zinc-200/80")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -68,33 +111,40 @@ export default function HorarioForm() {
             <div className="grid gap-3 md:grid-cols-2">
               <div className="grid gap-2">
                 <div className="text-sm font-medium text-zinc-900">Hora inicio</div>
-                <Input value={from} onChange={(e) => setFrom(e.target.value)} className="rounded-2xl" />
+                <Input
+                  type="time"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className={inputBase}
+                />
               </div>
               <div className="grid gap-2">
                 <div className="text-sm font-medium text-zinc-900">Hora fin</div>
-                <Input value={to} onChange={(e) => setTo(e.target.value)} className="rounded-2xl" />
+                <Input
+                  type="time"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className={inputBase}
+                />
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <Link href="/admin/horarios">
-                <Button variant="outline" className="rounded-2xl">
+                <Button
+                  variant="outline"
+                  className="rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50"
+                >
                   Volver
                 </Button>
               </Link>
 
               <Button
-                className="rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600"
-                onClick={() => {
-                  if (!serviceId) return;
-                  if (!service) return;
-                  if (!from.trim() || !to.trim()) return;
-
-                  createRule({ serviceId, weekday: Number(weekday), from, to });
-                  window.location.href = `/admin/horarios/${serviceId}`;
-                }}
+                className="rounded-2xl bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+                onClick={save}
+                disabled={saving}
               >
-                Guardar horario
+                {saving ? "Guardando..." : "Guardar horario"}
               </Button>
             </div>
           </div>
