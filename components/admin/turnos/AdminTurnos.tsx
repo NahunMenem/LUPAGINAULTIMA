@@ -140,8 +140,12 @@ export default function AdminTurnos() {
     }
   };
 
+  // FIX: el input type="date" heredaba texto blanco en dark mode (o por theme),
+  // pero vos le estabas forzando fondo blanco -> quedaba blanco sobre blanco.
+  // Esto NO rompe nada global: solo fuerza el color del texto para estos inputs
+  // y deja el datepicker en esquema "light" para que se vea bien.
   const inputBase =
-    "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-pink-500/40 focus-visible:border-pink-400/60";
+    "rounded-2xl bg-white/90 text-zinc-900 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-pink-500/40 focus-visible:border-pink-400/60 dark:text-zinc-900 dark:[color-scheme:light]";
 
   const cardBase =
     "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
@@ -241,9 +245,7 @@ export default function AdminTurnos() {
                                 : "border-zinc-300 text-zinc-600"
                             )}
                           >
-                            {paid
-                              ? `Pagado ($${t.total_pagado})`
-                              : "Sin pago"}
+                            {paid ? `Pagado ($${t.total_pagado})` : "Sin pago"}
                           </Badge>
 
                           <Badge
@@ -286,7 +288,11 @@ export default function AdminTurnos() {
                           )}
                           onClick={() => onPay(t)}
                           disabled={paid || busyId === t.id}
-                          title={paid ? "Ya tiene pago" : "Registrar pago (efectivo)"}
+                          title={
+                            paid
+                              ? "Ya tiene pago"
+                              : "Registrar pago (efectivo)"
+                          }
                         >
                           <Banknote className="h-4 w-4" />
                         </Button>

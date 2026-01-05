@@ -1,4 +1,4 @@
-//components/admin/horarios/HorariosEditor.tsx
+//componests/admin/horarios/HorariosEditor.tsx
 "use client";
 
 import Link from "next/link";
@@ -53,6 +53,15 @@ export default function HorariosEditor({ serviceId }: { serviceId: string }) {
   const cardBase =
     "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
 
+  // ✅ FIX outline hover (igual que en Servicios)
+  const outlineBtn =
+    "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm " +
+    "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
+
+  const primaryGreenBtn =
+    "rounded-2xl bg-emerald-500 text-white shadow-sm " +
+    "hover:!bg-emerald-600 hover:shadow active:!bg-emerald-700";
+
   return (
     <div className="grid gap-6">
       <SectionTitle
@@ -64,17 +73,12 @@ export default function HorariosEditor({ serviceId }: { serviceId: string }) {
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/admin/horarios">
-              <Button
-                variant="outline"
-                className="rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50"
-              >
+              <Button variant="outline" className={outlineBtn}>
                 Volver
               </Button>
             </Link>
             <Link href="/admin/horarios/nuevo">
-              <Button className="rounded-2xl bg-emerald-500 text-white shadow-sm hover:bg-emerald-600">
-                Nuevo horario
-              </Button>
+              <Button className={primaryGreenBtn}>Nuevo horario</Button>
             </Link>
           </div>
 
@@ -108,7 +112,8 @@ export default function HorariosEditor({ serviceId }: { serviceId: string }) {
                   </div>
 
                   <div className="text-xs text-zinc-500">
-                    (Por ahora el backend no tiene endpoint para eliminar horarios)
+                    (Por ahora el backend no tiene endpoint para eliminar
+                    horarios)
                   </div>
                 </div>
               ))

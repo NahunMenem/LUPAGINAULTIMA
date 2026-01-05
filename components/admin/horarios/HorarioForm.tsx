@@ -63,8 +63,22 @@ export default function HorarioForm() {
 
   const cardBase =
     "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
+
   const inputBase =
     "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:border-emerald-400/60";
+
+  // ✅ FIX outline hover
+  const outlineBtn =
+    "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm " +
+    "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
+
+  const primaryGreenBtn =
+    "rounded-2xl bg-emerald-500 text-white shadow-sm " +
+    "hover:!bg-emerald-600 hover:shadow active:!bg-emerald-700";
+
+  const selectTriggerBase =
+    "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 " +
+    "focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-400/60";
 
   return (
     <div className="grid gap-6">
@@ -79,7 +93,7 @@ export default function HorarioForm() {
             <div className="grid gap-2">
               <div className="text-sm font-medium text-zinc-900">Servicio</div>
               <Select value={serviceId} onValueChange={setServiceId}>
-                <SelectTrigger className={cn("rounded-2xl bg-white/90 shadow-sm", "border-zinc-200/80")}>
+                <SelectTrigger className={cn(selectTriggerBase)}>
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
                 <SelectContent>
@@ -95,7 +109,7 @@ export default function HorarioForm() {
             <div className="grid gap-2">
               <div className="text-sm font-medium text-zinc-900">Día</div>
               <Select value={weekday} onValueChange={setWeekday}>
-                <SelectTrigger className={cn("rounded-2xl bg-white/90 shadow-sm", "border-zinc-200/80")}>
+                <SelectTrigger className={cn(selectTriggerBase)}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -110,7 +124,9 @@ export default function HorarioForm() {
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="grid gap-2">
-                <div className="text-sm font-medium text-zinc-900">Hora inicio</div>
+                <div className="text-sm font-medium text-zinc-900">
+                  Hora inicio
+                </div>
                 <Input
                   type="time"
                   value={from}
@@ -131,16 +147,13 @@ export default function HorarioForm() {
 
             <div className="flex flex-wrap items-center gap-2">
               <Link href="/admin/horarios">
-                <Button
-                  variant="outline"
-                  className="rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50"
-                >
+                <Button variant="outline" className={outlineBtn}>
                   Volver
                 </Button>
               </Link>
 
               <Button
-                className="rounded-2xl bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+                className={primaryGreenBtn}
                 onClick={save}
                 disabled={saving}
               >

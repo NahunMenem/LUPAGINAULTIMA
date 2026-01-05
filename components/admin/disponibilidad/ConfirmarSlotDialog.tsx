@@ -52,6 +52,14 @@ export default function ConfirmarSlotDialog(props: {
   const inputBase =
     "rounded-2xl bg-white/95 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-400/60";
 
+  const outlineBtn =
+    "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm cursor-pointer " +
+    "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
+
+  const primaryGreenBtn =
+    "rounded-2xl bg-emerald-500 text-white shadow-sm cursor-pointer " +
+    "hover:!bg-emerald-600 hover:shadow active:!bg-emerald-700";
+
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent className="max-w-md rounded-3xl border border-white/40 bg-white/90 shadow-xl backdrop-blur">
@@ -87,13 +95,13 @@ export default function ConfirmarSlotDialog(props: {
         <div className="mt-4 flex items-center justify-end gap-2">
           <Button
             variant="outline"
-            className="rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50"
+            className={outlineBtn}
             onClick={() => props.onOpenChange(false)}
           >
             Cancelar
           </Button>
           <Button
-            className="rounded-2xl bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+            className={primaryGreenBtn}
             onClick={confirm}
             disabled={saving}
           >

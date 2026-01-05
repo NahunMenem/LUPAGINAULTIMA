@@ -34,6 +34,10 @@ export default function HorariosServicios() {
   const cardBase =
     "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
 
+  const primaryGreenBtn =
+    "rounded-2xl bg-emerald-500 text-white shadow-sm " +
+    "hover:!bg-emerald-600 hover:shadow active:!bg-emerald-700";
+
   return (
     <div className="grid gap-6">
       <SectionTitle title="Horarios" subtitle={subtitle} />
@@ -42,7 +46,7 @@ export default function HorariosServicios() {
         <CardContent className="p-4 md:p-6">
           <div className="flex justify-end">
             <Link href="/admin/horarios/nuevo">
-              <Button className="rounded-2xl bg-emerald-500 text-white shadow-sm hover:bg-emerald-600">
+              <Button className={primaryGreenBtn}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nuevo horario
               </Button>

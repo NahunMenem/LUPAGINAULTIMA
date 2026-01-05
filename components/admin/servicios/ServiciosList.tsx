@@ -47,8 +47,19 @@ export default function ServiciosList() {
 
   const cardBase =
     "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
+
   const inputBase =
     "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-pink-500/40 focus-visible:border-pink-400/60";
+
+  // ✅ FIX REAL: pisamos hover default del Button outline (hover:bg-accent hover:text-accent-foreground)
+  const outlineBtn =
+    "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm " +
+    "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
+
+  // ✅ FIX hover del botón pink (por si el base de shadcn se mete)
+  const primaryBtn =
+    "rounded-2xl bg-pink-600 text-white shadow-sm " +
+    "hover:!bg-pink-700 hover:shadow active:!bg-pink-800";
 
   return (
     <div className="grid gap-6">
@@ -71,7 +82,7 @@ export default function ServiciosList() {
             </div>
 
             <Link href="/admin/servicios/nuevo">
-              <Button className="rounded-2xl bg-pink-600 text-white shadow-sm hover:bg-pink-700">
+              <Button className={primaryBtn}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nuevo servicio
               </Button>
@@ -125,10 +136,7 @@ export default function ServiciosList() {
 
                   <div className="flex items-center gap-2">
                     <Link href={`/admin/servicios/${s.id}`}>
-                      <Button
-                        variant="outline"
-                        className="rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50"
-                      >
+                      <Button variant="outline" className={outlineBtn}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Editar
                       </Button>

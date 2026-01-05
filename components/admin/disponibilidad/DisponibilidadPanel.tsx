@@ -63,8 +63,20 @@ export default function DisponibilidadPanel() {
 
   const cardBase =
     "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
+
   const inputBase =
     "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:border-emerald-400/60";
+
+  const selectTriggerBase =
+    "rounded-2xl border-zinc-200/80 bg-white/90 shadow-sm " +
+    "focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-400/60";
+
+  const slotBtn =
+    "h-16 rounded-2xl border-emerald-500/40 bg-white/85 text-emerald-800 shadow-sm " +
+    "cursor-pointer font-semibold transition " +
+    "hover:!bg-emerald-50/70 hover:!text-emerald-900 hover:shadow " +
+    "active:!bg-emerald-100/70 " +
+    "focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-0";
 
   return (
     <div className="grid gap-6">
@@ -79,7 +91,7 @@ export default function DisponibilidadPanel() {
             <div className="grid gap-2">
               <div className="text-sm font-medium text-zinc-900">Servicio</div>
               <Select value={serviceId} onValueChange={setServiceId}>
-                <SelectTrigger className="rounded-2xl border-zinc-200/80 bg-white/90 shadow-sm">
+                <SelectTrigger className={selectTriggerBase}>
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
                 <SelectContent>
@@ -119,10 +131,7 @@ export default function DisponibilidadPanel() {
                   <Button
                     key={t}
                     variant="outline"
-                    className={cn(
-                      "h-16 rounded-2xl border-emerald-500/40 bg-white/85 text-emerald-800 shadow-sm",
-                      "font-semibold hover:bg-emerald-50/70 hover:text-emerald-900"
-                    )}
+                    className={slotBtn}
                     onClick={() => setSelectedTime(t)}
                   >
                     {t}
