@@ -191,7 +191,7 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
                 <Textarea
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  className={cn("min-h-[110px]", inputBase, "placeholder:text-zinc-400")}
+                  className={cn("min-h-27.5", inputBase, "placeholder:text-zinc-400")}
                   placeholder="Descripción breve del servicio…"
                 />
               </div>
