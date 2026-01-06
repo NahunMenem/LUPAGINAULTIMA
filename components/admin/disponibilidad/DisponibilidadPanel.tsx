@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { toISODate, formatHumanDate } from "@/lib/date";
 import ConfirmarSlotDialog from "@/components/admin/disponibilidad/ConfirmarSlotDialog";
 import { getDisponibilidad, listServicios, type Service } from "@/lib/apiTurnos";
-import { cn } from "@/lib/utils";
+import { toast } from "react-hot-toast";
 
 export default function DisponibilidadPanel() {
   const [services, setServices] = useState<Service[]>([]);
@@ -29,9 +29,15 @@ export default function DisponibilidadPanel() {
 
   useEffect(() => {
     const run = async () => {
-      const list = await listServicios();
-      setServices(list);
-      setServiceId(String(list[0]?.id ?? ""));
+      try {
+        const list = await listServicios();
+        setServices(list);
+        setServiceId(String(list[0]?.id ?? ""));
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "No se pudieron cargar los servicios");
+        setServices([]);
+        setServiceId("");
+      }
     };
     run();
   }, []);
@@ -46,12 +52,21 @@ export default function DisponibilidadPanel() {
     [dateISO]
   );
 
+  const normalizeSlots = (data: string[]) => {
+    const unique = Array.from(new Set((data ?? []).filter(Boolean)));
+    unique.sort((a, b) => a.localeCompare(b));
+    return unique;
+  };
+
   const loadAvailability = async () => {
     if (!serviceId || !dateISO) return;
     setLoading(true);
     try {
       const data = await getDisponibilidad(Number(serviceId), dateISO);
-      setSlots(data);
+      setSlots(normalizeSlots(data));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo cargar disponibilidad");
+      setSlots([]);
     } finally {
       setLoading(false);
     }

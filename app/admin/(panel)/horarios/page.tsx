@@ -1,4 +1,4 @@
-//app/admin/horarios/page.tsx
+//app/admin/(panel)/horarios/page.tsx
 import HorariosServicios from "@/components/admin/horarios/HorariosServicios";
 
 export default function Page() {

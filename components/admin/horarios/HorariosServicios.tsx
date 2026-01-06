@@ -3,26 +3,33 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-hot-toast";
+
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, RefreshCw } from "lucide-react";
 import { listServicios, type Service } from "@/lib/apiTurnos";
+import { cn } from "@/lib/utils";
 
 export default function HorariosServicios() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const run = async () => {
+    setLoading(true);
+    try {
+      const list = await listServicios();
+      setServices(list);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudieron cargar los servicios");
+      setServices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const run = async () => {
-      setLoading(true);
-      try {
-        const list = await listServicios();
-        setServices(list);
-      } finally {
-        setLoading(false);
-      }
-    };
     run();
   }, []);
 
@@ -38,13 +45,28 @@ export default function HorariosServicios() {
     "rounded-2xl bg-emerald-500 text-white shadow-sm " +
     "hover:!bg-emerald-600 hover:shadow active:!bg-emerald-700";
 
+  const outlineBtn =
+    "rounded-2xl border border-zinc-200 bg-white text-zinc-900 shadow-sm " +
+    "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
+
   return (
     <div className="grid gap-6">
       <SectionTitle title="Horarios" subtitle={subtitle} />
 
       <Card className={cardBase}>
         <CardContent className="p-4 md:p-6">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className={outlineBtn}
+              onClick={run}
+              disabled={loading}
+            >
+              <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+              {loading ? "Cargando..." : "Reintentar"}
+            </Button>
+
             <Link href="/admin/horarios/nuevo">
               <Button className={primaryGreenBtn}>
                 <Plus className="mr-2 h-4 w-4" />

@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +29,12 @@ export default function ConfirmarSlotDialog(props: {
   const [saving, setSaving] = useState(false);
 
   const confirm = async () => {
-    if (!props.serviceId || !props.dateISO || !props.time) return;
+    if (!props.serviceId || !props.dateISO || !props.time) {
+      toast.error("Datos incompletos para reservar");
+      return;
+    }
+
+    if (saving) return;
 
     setSaving(true);
     try {
@@ -40,36 +46,45 @@ export default function ConfirmarSlotDialog(props: {
         cliente_telefono: phone.trim() || "-",
       });
 
+      toast.success("✅ Turno reservado correctamente");
+
       props.onDone();
       props.onOpenChange(false);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "No se pudo reservar");
+      toast.error(
+        e instanceof Error ? e.message : "No se pudo reservar el turno"
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const inputBase =
-    "rounded-2xl bg-white/95 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-400/60";
+    "rounded-2xl bg-white/95 shadow-sm border-zinc-200/80 " +
+    "focus-visible:ring-2 focus-visible:ring-emerald-500/30 " +
+    "focus-visible:border-emerald-400/60";
 
   const outlineBtn =
-    "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm cursor-pointer " +
+    "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm " +
     "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
 
   const primaryGreenBtn =
-    "rounded-2xl bg-emerald-500 text-white shadow-sm cursor-pointer " +
+    "rounded-2xl bg-emerald-500 text-white shadow-sm " +
     "hover:!bg-emerald-600 hover:shadow active:!bg-emerald-700";
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent className="max-w-md rounded-3xl border border-white/40 bg-white/90 shadow-xl backdrop-blur">
         <DialogHeader>
-          <DialogTitle className="text-zinc-900">Confirmar turno</DialogTitle>
+          <DialogTitle className="text-zinc-900">
+            Confirmar turno
+          </DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-2 text-sm text-zinc-700">
           <div>
-            Servicio: <span className="font-semibold">{props.serviceName}</span>
+            Servicio:{" "}
+            <span className="font-semibold">{props.serviceName}</span>
           </div>
           <div className="capitalize">Fecha: {props.dateHuman}</div>
           <div>
@@ -83,12 +98,14 @@ export default function ConfirmarSlotDialog(props: {
             onChange={(e) => setName(e.target.value)}
             className={cn(inputBase, "placeholder:text-zinc-400")}
             placeholder="Nombre"
+            disabled={saving}
           />
           <Input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className={cn(inputBase, "placeholder:text-zinc-400")}
             placeholder="Teléfono"
+            disabled={saving}
           />
         </div>
 
@@ -97,6 +114,7 @@ export default function ConfirmarSlotDialog(props: {
             variant="outline"
             className={outlineBtn}
             onClick={() => props.onOpenChange(false)}
+            disabled={saving}
           >
             Cancelar
           </Button>

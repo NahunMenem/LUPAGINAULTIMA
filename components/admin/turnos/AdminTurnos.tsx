@@ -3,6 +3,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-hot-toast";
+
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +29,19 @@ import {
   FaClock,
   FaCheckCircle,
 } from "react-icons/fa";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+type ConfirmAction = "delete" | "confirm" | "pay";
 
 function IconBtn(props: {
   title: string;
@@ -65,6 +80,10 @@ export default function AdminTurnos() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>("delete");
+  const [confirmTurno, setConfirmTurno] = useState<Turno | null>(null);
+
   const human = useMemo(
     () => formatHumanDate(new Date(dateISO + "T00:00:00")),
     [dateISO]
@@ -79,6 +98,7 @@ export default function AdminTurnos() {
       setTurnos(ts);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error cargando turnos");
+      toast.error("❌ No se pudieron cargar los turnos");
     } finally {
       setLoading(false);
     }
@@ -104,15 +124,12 @@ export default function AdminTurnos() {
     });
 
     const map = new Map<number, Turno[]>();
-    for (const t of filtered) {
-      map.set(t.servicio_id, [...(map.get(t.servicio_id) ?? []), t]);
-    }
+    for (const t of filtered) map.set(t.servicio_id, [...(map.get(t.servicio_id) ?? []), t]);
 
     return Array.from(map.entries()).map(([sid, list]) => ({
       serviceId: sid,
       serviceName:
-        services.find((s) => s.id === sid)?.nombre ??
-        (list[0]?.servicio ?? "Servicio"),
+        services.find((s) => s.id === sid)?.nombre ?? (list[0]?.servicio ?? "Servicio"),
       items: list.sort((a, b) => hhmm(a.hora).localeCompare(hhmm(b.hora))),
     }));
   }, [turnos, query, services]);
@@ -127,42 +144,45 @@ export default function AdminTurnos() {
     return `https://wa.me/${clean}?text=${texto}`;
   };
 
-  const onDelete = async (t: Turno) => {
-    setBusyId(t.id);
-    try {
-      await eliminarTurno(t.id);
-      await load();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "No se pudo eliminar");
-    } finally {
-      setBusyId(null);
-    }
+  const openConfirm = (action: ConfirmAction, t: Turno) => {
+    setConfirmAction(action);
+    setConfirmTurno(t);
+    setConfirmOpen(true);
   };
 
-  const onConfirm = async (t: Turno) => {
-    setBusyId(t.id);
-    try {
-      await confirmarTurno(t.id);
-      await load();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "No se pudo confirmar");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const onPay = async (t: Turno) => {
+  const getMonto = (t: Turno) => {
     const servicio = services.find((s) => s.id === t.servicio_id);
-    const monto = Number(servicio?.precio ?? 0) || 0;
+    return Number(servicio?.precio ?? 0) || 0;
+  };
 
-    if ((t.total_pagado ?? 0) > 0) return;
+  const runConfirmedAction = async () => {
+    if (!confirmTurno) return;
 
+    const t = confirmTurno;
     setBusyId(t.id);
+
     try {
-      await registrarPago({ turno_id: t.id, metodo: "efectivo", monto });
+      if (confirmAction === "delete") {
+        await eliminarTurno(t.id);
+        toast.success("🗑️ Turno eliminado");
+      }
+
+      if (confirmAction === "confirm") {
+        await confirmarTurno(t.id);
+        toast.success("✅ Turno confirmado");
+      }
+
+      if (confirmAction === "pay") {
+        const monto = getMonto(t);
+        await registrarPago({ turno_id: t.id, metodo: "efectivo", monto });
+        toast.success(`💰 Pago registrado ($${monto})`);
+      }
+
+      setConfirmOpen(false);
+      setConfirmTurno(null);
       await load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "No se pudo registrar pago");
+      toast.error(e instanceof Error ? e.message : "Ocurrió un error");
     } finally {
       setBusyId(null);
     }
@@ -173,6 +193,40 @@ export default function AdminTurnos() {
 
   const cardBase =
     "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
+
+  const confirmTexts = useMemo(() => {
+    const t = confirmTurno;
+    const baseTitle = t ? `${t.cliente_nombre} • ${hhmm(t.hora)}` : "Turno";
+
+    if (confirmAction === "delete") {
+      return {
+        title: "Eliminar turno",
+        description:
+          `Vas a eliminar este turno (${baseTitle}). Esta acción no se puede deshacer.`,
+        actionLabel: "Sí, eliminar",
+        actionClass: "bg-rose-600 hover:bg-rose-700 text-white",
+      };
+    }
+
+    if (confirmAction === "confirm") {
+      return {
+        title: "Confirmar turno",
+        description:
+          `Vas a marcar como confirmado este turno (${baseTitle}). ¿Querés continuar?`,
+        actionLabel: "Sí, confirmar",
+        actionClass: "bg-pink-600 hover:bg-pink-700 text-white",
+      };
+    }
+
+    const monto = t ? getMonto(t) : 0;
+    return {
+      title: "Registrar pago",
+      description:
+        `Vas a registrar el pago en efectivo por $${monto} para (${baseTitle}). ¿Confirmás?`,
+      actionLabel: "Sí, registrar pago",
+      actionClass: "bg-amber-600 hover:bg-amber-700 text-white",
+    };
+  }, [confirmAction, confirmTurno, services]);
 
   return (
     <div className="grid gap-6">
@@ -221,9 +275,7 @@ export default function AdminTurnos() {
         <Card key={g.serviceId} className={cardBase}>
           <CardContent className="p-4 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-base font-semibold text-zinc-900">
-                {g.serviceName}
-              </div>
+              <div className="text-base font-semibold text-zinc-900">{g.serviceName}</div>
               <Badge className="rounded-full border border-zinc-300/70 bg-white/70 text-zinc-700">
                 {g.items.length} turno{g.items.length === 1 ? "" : "s"}
               </Badge>
@@ -246,24 +298,18 @@ export default function AdminTurnos() {
                           <div className="grid h-8 w-8 place-items-center rounded-xl bg-pink-500/10 ring-1 ring-pink-500/15">
                             <FaClock className="h-4 w-4 text-pink-700" />
                           </div>
-                          <div className="text-lg font-semibold text-zinc-900">
-                            {hhmm(t.hora)}
-                          </div>
+                          <div className="text-lg font-semibold text-zinc-900">{hhmm(t.hora)}</div>
                         </div>
 
                         <div className="mt-2 text-sm text-zinc-700">
-                          {t.cliente_nombre}{" "}
-                          <span className="text-zinc-400">·</span>{" "}
-                          {t.cliente_telefono}
+                          {t.cliente_nombre} <span className="text-zinc-400">·</span> {t.cliente_telefono}
                         </div>
 
                         <div className="mt-3 flex flex-wrap items-center gap-2">
                           <span
                             className={cn(
                               "inline-flex items-center rounded-full border bg-white px-3 py-1 text-xs font-medium",
-                              paid
-                                ? "border-emerald-200 text-emerald-700"
-                                : "border-zinc-300 text-zinc-600"
+                              paid ? "border-emerald-200 text-emerald-700" : "border-zinc-300 text-zinc-600"
                             )}
                           >
                             {paid ? `Pagado ($${t.total_pagado})` : "Sin pago"}
@@ -272,9 +318,7 @@ export default function AdminTurnos() {
                           <span
                             className={cn(
                               "inline-flex items-center rounded-full border bg-white px-3 py-1 text-xs font-medium",
-                              confirmed
-                                ? "border-pink-200 text-pink-700"
-                                : "border-zinc-300 text-zinc-600"
+                              confirmed ? "border-pink-200 text-pink-700" : "border-zinc-300 text-zinc-600"
                             )}
                           >
                             {confirmed ? "Confirmado" : "Pendiente"}
@@ -300,7 +344,7 @@ export default function AdminTurnos() {
 
                         <IconBtn
                           title={paid ? "Ya tiene pago" : "Registrar pago (efectivo)"}
-                          onClick={() => onPay(t)}
+                          onClick={() => openConfirm("pay", t)}
                           disabled={paid || isBusy}
                           className="hover:bg-amber-50 hover:border-amber-200"
                         >
@@ -309,17 +353,16 @@ export default function AdminTurnos() {
 
                         <IconBtn
                           title={confirmed ? "Ya confirmado" : "Confirmar turno"}
-                          onClick={() => onConfirm(t)}
+                          onClick={() => openConfirm("confirm", t)}
                           disabled={confirmed || isBusy}
                           className="hover:bg-pink-50 hover:border-pink-200"
                         >
-                          {/* ✅ FIX: era FaCircleCheck, ahora es FaCheckCircle */}
                           <FaCheckCircle className="h-4 w-4 text-pink-700" />
                         </IconBtn>
 
                         <IconBtn
-                          title="Eliminar (solo si NO está confirmado)"
-                          onClick={() => onDelete(t)}
+                          title="Eliminar turno"
+                          onClick={() => openConfirm("delete", t)}
                           disabled={isBusy}
                           className="hover:bg-rose-50 hover:border-rose-200"
                         >
@@ -346,6 +389,35 @@ export default function AdminTurnos() {
           No hay turnos para esta fecha.
         </div>
       )}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmTexts.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmTexts.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel
+              className="rounded-full"
+              onClick={() => {
+                setConfirmOpen(false);
+                setConfirmTurno(null);
+              }}
+            >
+              Cancelar
+            </AlertDialogCancel>
+
+            <AlertDialogAction
+              className={cn("rounded-full", confirmTexts.actionClass)}
+              onClick={runConfirmedAction}
+              disabled={!!busyId}
+            >
+              {busyId ? "Procesando…" : confirmTexts.actionLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

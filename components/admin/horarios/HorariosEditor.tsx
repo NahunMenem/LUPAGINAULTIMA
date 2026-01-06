@@ -1,8 +1,11 @@
 //componests/admin/horarios/HorariosEditor.tsx
+
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-hot-toast";
+
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +39,10 @@ export default function HorariosEditor({ serviceId }: { serviceId: string }) {
             hhmm(a.hora_inicio).localeCompare(hhmm(b.hora_inicio))
         )
       );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudieron cargar los horarios");
+      setRules([]);
+      setService(null);
     } finally {
       setLoading(false);
     }
@@ -53,7 +60,6 @@ export default function HorariosEditor({ serviceId }: { serviceId: string }) {
   const cardBase =
     "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
 
-  // ✅ FIX outline hover (igual que en Servicios)
   const outlineBtn =
     "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm " +
     "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
@@ -64,10 +70,7 @@ export default function HorariosEditor({ serviceId }: { serviceId: string }) {
 
   return (
     <div className="grid gap-6">
-      <SectionTitle
-        title={title}
-        subtitle="Rangos configurados por día para este servicio."
-      />
+      <SectionTitle title={title} subtitle="Rangos configurados por día para este servicio." />
 
       <Card className={cardBase}>
         <CardContent className="p-4 md:p-6">
@@ -112,8 +115,7 @@ export default function HorariosEditor({ serviceId }: { serviceId: string }) {
                   </div>
 
                   <div className="text-xs text-zinc-500">
-                    (Por ahora el backend no tiene endpoint para eliminar
-                    horarios)
+                    (Por ahora el backend no tiene endpoint para eliminar horarios)
                   </div>
                 </div>
               ))

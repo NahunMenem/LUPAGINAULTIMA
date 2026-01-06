@@ -1,14 +1,17 @@
 //components/admin/servicios/ServiciosList.tsx
+
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-hot-toast";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search, RefreshCw } from "lucide-react";
 import { listServicios, type Service } from "@/lib/apiTurnos";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +28,9 @@ export default function ServiciosList() {
       const data = await listServicios();
       setItems(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error cargando servicios");
+      const msg = e instanceof Error ? e.message : "Error cargando servicios";
+      setError(msg);
+      toast.error("❌ No se pudieron cargar los servicios");
     } finally {
       setLoading(false);
     }
@@ -52,7 +57,7 @@ export default function ServiciosList() {
     "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-pink-500/40 focus-visible:border-pink-400/60";
 
   const outlineBtn =
-    "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm " +
+    "rounded-2xl border border-zinc-200 bg-white text-zinc-900 shadow-sm " +
     "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
 
   const primaryBtn =
@@ -79,12 +84,25 @@ export default function ServiciosList() {
               />
             </div>
 
-            <Link href="/admin/servicios/nuevo">
-              <Button className={primaryBtn}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo servicio
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className={outlineBtn}
+                onClick={load}
+                disabled={loading}
+              >
+                <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+                {loading ? "Actualizando…" : "Reintentar"}
               </Button>
-            </Link>
+
+              <Link href="/admin/servicios/nuevo">
+                <Button className={primaryBtn}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nuevo servicio
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {error && (

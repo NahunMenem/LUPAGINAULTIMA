@@ -3,6 +3,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-hot-toast";
+
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,17 @@ import { WEEKDAYS } from "@/lib/date";
 import { crearHorario, listServicios, type Service } from "@/lib/apiTurnos";
 import { cn } from "@/lib/utils";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 export default function HorarioForm() {
   const [services, setServices] = useState<Service[]>([]);
   const [serviceId, setServiceId] = useState<string>("");
@@ -26,11 +39,17 @@ export default function HorarioForm() {
   const [to, setTo] = useState("13:00");
   const [saving, setSaving] = useState(false);
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   useEffect(() => {
     const run = async () => {
-      const list = await listServicios();
-      setServices(list);
-      setServiceId(String(list[0]?.id ?? ""));
+      try {
+        const list = await listServicios();
+        setServices(list);
+        setServiceId(String(list[0]?.id ?? ""));
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "No se pudieron cargar servicios");
+      }
     };
     run();
   }, []);
@@ -39,6 +58,18 @@ export default function HorarioForm() {
     () => services.find((s) => String(s.id) === serviceId) ?? null,
     [services, serviceId]
   );
+
+  const openConfirm = () => {
+    if (!serviceId || !service) {
+      toast.error("⚠️ Seleccioná un servicio");
+      return;
+    }
+    if (!from.trim() || !to.trim()) {
+      toast.error("⚠️ Completá hora inicio y fin");
+      return;
+    }
+    setConfirmOpen(true);
+  };
 
   const save = async () => {
     if (!serviceId || !service) return;
@@ -53,11 +84,13 @@ export default function HorarioForm() {
         hora_fin: to,
       });
 
+      toast.success("✅ Horario guardado");
       window.location.href = `/admin/horarios/${serviceId}`;
     } catch (e) {
-      alert(e instanceof Error ? e.message : "No se pudo guardar");
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar");
     } finally {
       setSaving(false);
+      setConfirmOpen(false);
     }
   };
 
@@ -67,7 +100,6 @@ export default function HorarioForm() {
   const inputBase =
     "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:border-emerald-400/60";
 
-  // ✅ FIX outline hover
   const outlineBtn =
     "rounded-2xl border-zinc-200 bg-white text-zinc-900 shadow-sm " +
     "hover:!bg-zinc-100 hover:!text-zinc-900 active:!bg-zinc-200";
@@ -124,9 +156,7 @@ export default function HorarioForm() {
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="grid gap-2">
-                <div className="text-sm font-medium text-zinc-900">
-                  Hora inicio
-                </div>
+                <div className="text-sm font-medium text-zinc-900">Hora inicio</div>
                 <Input
                   type="time"
                   value={from}
@@ -152,17 +182,39 @@ export default function HorarioForm() {
                 </Button>
               </Link>
 
-              <Button
-                className={primaryGreenBtn}
-                onClick={save}
-                disabled={saving}
-              >
+              <Button className={primaryGreenBtn} onClick={openConfirm} disabled={saving}>
                 {saving ? "Guardando..." : "Guardar horario"}
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar horario</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vas a crear un horario para este servicio. ¿Querés continuar?
+              <div className="mt-3 rounded-2xl border bg-white/70 p-3 text-sm text-zinc-700">
+                <div className="font-semibold text-zinc-900">{service?.nombre ?? "Servicio"}</div>
+                <div className="mt-1">
+                  {WEEKDAYS[Number(weekday)]} • {from} - {to}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-full" disabled={saving}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction className={cn("rounded-full", primaryGreenBtn)} onClick={save} disabled={saving}>
+              {saving ? "Guardando..." : "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

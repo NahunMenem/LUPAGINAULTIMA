@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { toast } from "react-hot-toast";
+
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +18,17 @@ import {
   getServicioById,
   type Service,
 } from "@/lib/apiTurnos";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
   const params = useParams();
@@ -32,6 +45,8 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState<string | null>(null);
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   const title = useMemo(
     () => (isEdit ? "Editar servicio" : "Nuevo servicio"),
     [isEdit]
@@ -44,6 +59,7 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
       if (!id) {
         setError("No se pudo obtener el ID del servicio desde la URL.");
         setLoading(false);
+        toast.error("❌ No se pudo obtener el ID del servicio");
         return;
       }
 
@@ -57,7 +73,9 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
         setDuration(String(s.duracion_minutos));
         setPrice(String(s.precio));
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Error cargando servicio");
+        const msg = e instanceof Error ? e.message : "Error cargando servicio";
+        setError(msg);
+        toast.error("❌ No se pudo cargar el servicio");
       } finally {
         setLoading(false);
       }
@@ -66,14 +84,31 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
     run();
   }, [isEdit, id]);
 
-  const save = async () => {
-    const dur = Math.max(5, Number(duration || 0));
-    const pr = Math.max(0, Number(price || 0));
+  const dur = useMemo(() => Math.max(5, Number(duration || 0)), [duration]);
+  const pr = useMemo(() => Math.max(0, Number(price || 0)), [price]);
 
+  const canSave = useMemo(() => {
+    return Boolean(name.trim()) && dur >= 5 && pr >= 0 && !saving && !loading;
+  }, [name, dur, pr, saving, loading]);
+
+  const validateBeforeConfirm = () => {
     if (!name.trim()) {
-      alert("El nombre es obligatorio.");
+      toast.error("⚠️ El nombre es obligatorio");
       return;
     }
+    if (!Number.isFinite(dur) || dur < 5) {
+      toast.error("⚠️ La duración debe ser de al menos 5 minutos");
+      return;
+    }
+    if (!Number.isFinite(pr) || pr < 0) {
+      toast.error("⚠️ El precio no puede ser negativo");
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const save = async () => {
+    if (!canSave) return;
 
     setSaving(true);
     try {
@@ -86,6 +121,8 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
           duracion_minutos: dur,
           precio: pr,
         });
+
+        toast.success("✅ Servicio actualizado");
       } else {
         await crearServicio({
           nombre: name.trim(),
@@ -93,13 +130,16 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
           duracion_minutos: dur,
           precio: pr,
         });
+
+        toast.success("✅ Servicio creado");
       }
 
       window.location.href = "/admin/servicios";
     } catch (e) {
-      alert(e instanceof Error ? e.message : "No se pudo guardar");
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar");
     } finally {
       setSaving(false);
+      setConfirmOpen(false);
     }
   };
 
@@ -109,7 +149,6 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
   const inputBase =
     "rounded-2xl bg-white/90 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-pink-500/40 focus-visible:border-pink-400/60";
 
-  // ✅ pisa el hover del variant="outline" (hover:bg-accent) y evita el blanco raro
   const outlineBtn =
     "rounded-2xl border border-zinc-200 bg-white text-zinc-900 shadow-sm " +
     "hover:!bg-zinc-100 hover:!text-zinc-900 hover:!border-zinc-300 " +
@@ -152,11 +191,7 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
                 <Textarea
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  className={cn(
-                    "min-h-[110px]",
-                    inputBase,
-                    "placeholder:text-zinc-400"
-                  )}
+                  className={cn("min-h-[110px]", inputBase, "placeholder:text-zinc-400")}
                   placeholder="Descripción breve del servicio…"
                 />
               </div>
@@ -194,7 +229,7 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
                   </Button>
                 </Link>
 
-                <Button className={primaryBtn} onClick={save} disabled={saving}>
+                <Button className={primaryBtn} onClick={validateBeforeConfirm} disabled={!canSave}>
                   {saving ? "Guardando…" : "Guardar servicio"}
                 </Button>
               </div>
@@ -202,6 +237,42 @@ export default function ServicioForm({ mode }: { mode: "create" | "edit" }) {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEdit ? "Confirmar cambios" : "Confirmar creación"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isEdit
+                ? "Vas a guardar cambios en este servicio. ¿Querés continuar?"
+                : "Vas a crear un nuevo servicio. ¿Querés continuar?"}
+              <div className="mt-3 rounded-2xl border bg-white/70 p-3 text-sm text-zinc-700">
+                <div className="font-semibold text-zinc-900">{name.trim() || "—"}</div>
+                <div className="mt-1 text-zinc-700">
+                  {dur} min • ${pr}
+                </div>
+                {desc.trim() ? <div className="mt-2 text-zinc-600">{desc.trim()}</div> : null}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-full" disabled={saving}>
+              Cancelar
+            </AlertDialogCancel>
+
+            <AlertDialogAction
+              className={cn("rounded-full", primaryBtn)}
+              onClick={save}
+              disabled={!canSave}
+            >
+              {saving ? "Guardando…" : "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
