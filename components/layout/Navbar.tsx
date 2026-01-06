@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, UserRound, LogOut } from "lucide-react";
 
@@ -12,13 +12,13 @@ import ThemeToggle from "./ThemeToggle";
 import { siteConfig } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 
-function getCookie(name: string) {
+function getCookieClient(name: string) {
   if (typeof document === "undefined") return null;
   const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
   return match ? decodeURIComponent(match[2]) : null;
 }
 
-function deleteCookie(name: string) {
+function deleteCookieClient(name: string) {
   if (typeof document === "undefined") return;
   document.cookie = `${name}=; path=/; max-age=0`;
 }
@@ -31,20 +31,37 @@ export default function Navbar() {
   const nav = useMemo(() => siteConfig.nav, []);
 
   const isAdminRoute = pathname?.startsWith("/admin");
-  const role = getCookie("js_role");
-  const isAdmin = role === "admin";
+
+  // ✅ FIX Hydration: no calculamos isAdmin en SSR/render
+  const [mounted, setMounted] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const role = getCookieClient("js_role");
+    setIsAdmin(role === "admin");
+  }, []);
 
   const handleLogout = () => {
-    deleteCookie("js_role");
+    deleteCookieClient("js_role");
+    setIsAdmin(false);
     setOpen(false);
     router.replace("/admin/login");
     router.refresh();
   };
 
+  const adminIconBase =
+    "hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full border " +
+    "bg-background/40 text-muted-foreground transition hover:bg-background/70 hover:text-foreground";
+
   return (
     <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
+        <Link
+          href="/"
+          className="flex items-center gap-3"
+          onClick={() => setOpen(false)}
+        >
           <div className="relative h-9 w-9 overflow-hidden rounded-xl border bg-white">
             <Image
               src="/logo.jpg"
@@ -57,8 +74,12 @@ export default function Navbar() {
           </div>
 
           <div className="leading-tight">
-            <p className="font-(family-name:--font-pinyon) text-[20px] leading-none">Julieta Studio</p>
-            <p className="text-xs tracking-wide text-muted-foreground">Estética • Beauty</p>
+            <p className="font-(family-name:--font-pinyon) text-[20px] leading-none">
+              Julieta Studio
+            </p>
+            <p className="text-xs tracking-wide text-muted-foreground">
+              Estética • Beauty
+            </p>
           </div>
         </Link>
 
@@ -71,7 +92,9 @@ export default function Navbar() {
                 href={item.href}
                 className={[
                   "text-sm font-medium transition-colors",
-                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                  active
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 ].join(" ")}
               >
                 {item.label}
@@ -88,11 +111,17 @@ export default function Navbar() {
           {/* Admin/Salir (solo desktop, oculto dentro del panel admin) */}
           {!isAdminRoute && (
             <>
-              {isAdmin ? (
+              {/* ✅ SSR/primer render: siempre lo mismo para no romper hydration */}
+              {!mounted ? (
+                <span
+                  className={adminIconBase + " opacity-0 pointer-events-none"}
+                  aria-hidden="true"
+                />
+              ) : isAdmin ? (
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full border bg-background/40 text-muted-foreground transition hover:bg-background/70 hover:text-foreground"
+                  className={adminIconBase}
                   aria-label="Cerrar sesión admin"
                   title="Cerrar sesión"
                 >
@@ -101,7 +130,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/admin/login"
-                  className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full border bg-background/40 text-muted-foreground transition hover:bg-background/70 hover:text-foreground"
+                  className={adminIconBase}
                   aria-label="Panel admin"
                   title="Admin"
                 >
