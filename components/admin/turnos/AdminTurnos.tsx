@@ -1,19 +1,12 @@
 //components/admin/turnos/AdminTurnos.tsx
 
 "use client";
+
 import { useEffect, useMemo, useState } from "react";
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  MessageSquareText,
-  Trash2,
-  Banknote,
-  Clock,
-  CheckCircle2,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatHumanDate, toISODate } from "@/lib/date";
 import {
@@ -26,6 +19,41 @@ import {
   type Service,
   type Turno,
 } from "@/lib/apiTurnos";
+
+import {
+  FaWhatsapp,
+  FaTrashAlt,
+  FaMoneyBillWave,
+  FaClock,
+  FaCheckCircle,
+} from "react-icons/fa";
+
+function IconBtn(props: {
+  title: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={props.title}
+      onClick={props.disabled ? undefined : props.onClick}
+      disabled={props.disabled}
+      className={cn(
+        "inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white/90 shadow-sm",
+        "transition active:scale-[0.98]",
+        "hover:bg-zinc-100 hover:border-zinc-300",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/35 focus-visible:ring-offset-0",
+        "disabled:pointer-events-none disabled:opacity-50",
+        props.className
+      )}
+    >
+      {props.children}
+    </button>
+  );
+}
 
 export default function AdminTurnos() {
   const [dateISO, setDateISO] = useState(() => toISODate(new Date()));
@@ -127,7 +155,7 @@ export default function AdminTurnos() {
     const servicio = services.find((s) => s.id === t.servicio_id);
     const monto = Number(servicio?.precio ?? 0) || 0;
 
-    if (t.total_pagado > 0) return;
+    if ((t.total_pagado ?? 0) > 0) return;
 
     setBusyId(t.id);
     try {
@@ -140,10 +168,6 @@ export default function AdminTurnos() {
     }
   };
 
-  // FIX: el input type="date" heredaba texto blanco en dark mode (o por theme),
-  // pero vos le estabas forzando fondo blanco -> quedaba blanco sobre blanco.
-  // Esto NO rompe nada global: solo fuerza el color del texto para estos inputs
-  // y deja el datepicker en esquema "light" para que se vea bien.
   const inputBase =
     "rounded-2xl bg-white/90 text-zinc-900 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-pink-500/40 focus-visible:border-pink-400/60 dark:text-zinc-900 dark:[color-scheme:light]";
 
@@ -200,10 +224,7 @@ export default function AdminTurnos() {
               <div className="text-base font-semibold text-zinc-900">
                 {g.serviceName}
               </div>
-              <Badge
-                variant="outline"
-                className="rounded-full border-zinc-300/70 bg-white/70 text-zinc-700"
-              >
+              <Badge className="rounded-full border border-zinc-300/70 bg-white/70 text-zinc-700">
                 {g.items.length} turno{g.items.length === 1 ? "" : "s"}
               </Badge>
             </div>
@@ -212,6 +233,7 @@ export default function AdminTurnos() {
               {g.items.map((t) => {
                 const paid = (t.total_pagado ?? 0) > 0;
                 const confirmed = !!t.confirmado;
+                const isBusy = busyId === t.id;
 
                 return (
                   <div
@@ -222,7 +244,7 @@ export default function AdminTurnos() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <div className="grid h-8 w-8 place-items-center rounded-xl bg-pink-500/10 ring-1 ring-pink-500/15">
-                            <Clock className="h-4 w-4 text-pink-700" />
+                            <FaClock className="h-4 w-4 text-pink-700" />
                           </div>
                           <div className="text-lg font-semibold text-zinc-900">
                             {hhmm(t.hora)}
@@ -236,91 +258,73 @@ export default function AdminTurnos() {
                         </div>
 
                         <div className="mt-3 flex flex-wrap items-center gap-2">
-                          <Badge
-                            variant="outline"
+                          <span
                             className={cn(
-                              "rounded-full bg-white",
+                              "inline-flex items-center rounded-full border bg-white px-3 py-1 text-xs font-medium",
                               paid
                                 ? "border-emerald-200 text-emerald-700"
                                 : "border-zinc-300 text-zinc-600"
                             )}
                           >
                             {paid ? `Pagado ($${t.total_pagado})` : "Sin pago"}
-                          </Badge>
+                          </span>
 
-                          <Badge
-                            variant="outline"
+                          <span
                             className={cn(
-                              "rounded-full bg-white",
+                              "inline-flex items-center rounded-full border bg-white px-3 py-1 text-xs font-medium",
                               confirmed
                                 ? "border-pink-200 text-pink-700"
                                 : "border-zinc-300 text-zinc-600"
                             )}
                           >
                             {confirmed ? "Confirmado" : "Pendiente"}
-                          </Badge>
+                          </span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Button
-                          asChild
-                          variant="outline"
-                          size="icon"
-                          className="rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50"
+                        <a
+                          href={whatsappLink(t.cliente_telefono, t)}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="WhatsApp"
+                          className={cn("inline-flex", isBusy && "opacity-60")}
                         >
-                          <a
-                            href={whatsappLink(t.cliente_telefono, t)}
-                            target="_blank"
-                            rel="noreferrer"
+                          <IconBtn
                             title="WhatsApp"
+                            className="hover:bg-emerald-50 hover:border-emerald-200"
                           >
-                            <MessageSquareText className="h-4 w-4" />
-                          </a>
-                        </Button>
+                            <FaWhatsapp className="h-4 w-4 text-emerald-700" />
+                          </IconBtn>
+                        </a>
 
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className={cn(
-                            "rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50",
-                            paid && "opacity-60"
-                          )}
+                        <IconBtn
+                          title={paid ? "Ya tiene pago" : "Registrar pago (efectivo)"}
                           onClick={() => onPay(t)}
-                          disabled={paid || busyId === t.id}
-                          title={
-                            paid
-                              ? "Ya tiene pago"
-                              : "Registrar pago (efectivo)"
-                          }
+                          disabled={paid || isBusy}
+                          className="hover:bg-amber-50 hover:border-amber-200"
                         >
-                          <Banknote className="h-4 w-4" />
-                        </Button>
+                          <FaMoneyBillWave className="h-4 w-4 text-amber-700" />
+                        </IconBtn>
 
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className={cn(
-                            "rounded-2xl border-zinc-200 bg-white hover:bg-zinc-50",
-                            confirmed && "opacity-60"
-                          )}
-                          onClick={() => onConfirm(t)}
-                          disabled={confirmed || busyId === t.id}
+                        <IconBtn
                           title={confirmed ? "Ya confirmado" : "Confirmar turno"}
+                          onClick={() => onConfirm(t)}
+                          disabled={confirmed || isBusy}
+                          className="hover:bg-pink-50 hover:border-pink-200"
                         >
-                          <CheckCircle2 className="h-4 w-4" />
-                        </Button>
+                          {/* ✅ FIX: era FaCircleCheck, ahora es FaCheckCircle */}
+                          <FaCheckCircle className="h-4 w-4 text-pink-700" />
+                        </IconBtn>
 
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="rounded-2xl border-zinc-200 bg-white hover:bg-rose-50"
-                          onClick={() => onDelete(t)}
-                          disabled={busyId === t.id}
+                        <IconBtn
                           title="Eliminar (solo si NO está confirmado)"
+                          onClick={() => onDelete(t)}
+                          disabled={isBusy}
+                          className="hover:bg-rose-50 hover:border-rose-200"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <FaTrashAlt className="h-4 w-4 text-rose-700" />
+                        </IconBtn>
                       </div>
                     </div>
                   </div>

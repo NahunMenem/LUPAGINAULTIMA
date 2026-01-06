@@ -1,5 +1,6 @@
 export const API_BASE =
-  process.env.NEXT_PUBLIC_TURNOS_API_BASE || "https://turnoslu-production.up.railway.app";
+  process.env.NEXT_PUBLIC_TURNOS_API_BASE ||
+  "https://turnoslu-production.up.railway.app";
 
 type ApiError = { detail?: string };
 
@@ -64,7 +65,11 @@ export type CajaResp = {
   total_general: number;
   total_por_metodo: { metodo: string; total: number }[];
   total_por_servicio: { servicio: string; total: number }[];
-  servicios_mas_solicitados: { servicio: string; cantidad: number; porcentaje: number }[];
+  servicios_mas_solicitados: {
+    servicio: string;
+    cantidad: number;
+    porcentaje: number;
+  }[];
   total_turnos: number;
 };
 
@@ -75,20 +80,44 @@ export function listServicios() {
   return apiFetch<Service[]>("/servicios");
 }
 
+export async function getServicioById(id: number) {
+  // Intentamos endpoint directo (si existe)
+  try {
+    return await apiFetch<Service>(`/servicios/${id}`);
+  } catch {
+    // Fallback: tu backend actual lista activos, buscamos ahí
+    const list = await listServicios();
+    const s = list.find((x) => Number(x.id) === Number(id));
+    if (!s) throw new Error(`Servicio no encontrado (id ${id})`);
+    return s;
+  }
+}
+
 export function crearServicio(body: {
   nombre: string;
   descripcion?: string | null;
   duracion_minutos: number;
   precio: number;
 }) {
-  return apiFetch<Service>("/servicios", { method: "POST", body: JSON.stringify(body) });
+  return apiFetch<Service>("/servicios", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function editarServicio(
   id: number,
-  body: { nombre: string; descripcion?: string | null; duracion_minutos: number; precio: number }
+  body: {
+    nombre: string;
+    descripcion?: string | null;
+    duracion_minutos: number;
+    precio: number;
+  }
 ) {
-  return apiFetch<Service>(`/servicios/${id}`, { method: "PUT", body: JSON.stringify(body) });
+  return apiFetch<Service>(`/servicios/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
 }
 
 // ======================
@@ -104,14 +133,19 @@ export function crearHorario(body: {
   hora_inicio: string; // "09:00"
   hora_fin: string; // "13:00"
 }) {
-  return apiFetch<Horario>("/horarios", { method: "POST", body: JSON.stringify(body) });
+  return apiFetch<Horario>("/horarios", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 // ======================
 // Disponibilidad
 // ======================
 export function getDisponibilidad(servicio_id: number, fecha: string) {
-  return apiFetch<string[]>(`/disponibilidad?servicio_id=${servicio_id}&fecha=${fecha}`);
+  return apiFetch<string[]>(
+    `/disponibilidad?servicio_id=${servicio_id}&fecha=${fecha}`
+  );
 }
 
 // ======================
@@ -140,11 +174,20 @@ export function eliminarTurno(turno_id: number) {
 }
 
 export function confirmarTurno(turno_id: number) {
-  return apiFetch<{ ok: boolean }>(`/turnos/${turno_id}/confirmar`, { method: "POST" });
+  return apiFetch<{ ok: boolean }>(`/turnos/${turno_id}/confirmar`, {
+    method: "POST",
+  });
 }
 
-export function registrarPago(body: { turno_id: number; metodo: "efectivo" | "tarjeta" | "transferencia"; monto: number }) {
-  return apiFetch<{ ok: boolean }>("/pagos", { method: "POST", body: JSON.stringify(body) });
+export function registrarPago(body: {
+  turno_id: number;
+  metodo: "efectivo" | "tarjeta" | "transferencia";
+  monto: number;
+}) {
+  return apiFetch<{ ok: boolean }>("/pagos", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 // ======================
@@ -156,6 +199,5 @@ export function getCaja(desde: string, hasta: string) {
 
 // Helpers UI
 export function hhmm(h: string) {
-  // "10:00:00" -> "10:00"
   return h?.slice(0, 5) ?? "";
 }
