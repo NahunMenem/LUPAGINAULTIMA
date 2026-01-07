@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toISODate, formatHumanDate } from "@/lib/date";
+import { toISODate, formatHumanDate, isoToLocalDate, normalizeSlots } from "@/lib/date";
 import ConfirmarSlotDialog from "@/components/admin/disponibilidad/ConfirmarSlotDialog";
 import { getDisponibilidad, listServicios, type Service } from "@/lib/apiTurnos";
 import { toast } from "react-hot-toast";
@@ -34,7 +34,9 @@ export default function DisponibilidadPanel() {
         setServices(list);
         setServiceId(String(list[0]?.id ?? ""));
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "No se pudieron cargar los servicios");
+        toast.error(
+          e instanceof Error ? e.message : "No se pudieron cargar los servicios"
+        );
         setServices([]);
         setServiceId("");
       }
@@ -47,16 +49,7 @@ export default function DisponibilidadPanel() {
     [services, serviceId]
   );
 
-  const human = useMemo(
-    () => formatHumanDate(new Date(dateISO + "T00:00:00")),
-    [dateISO]
-  );
-
-  const normalizeSlots = (data: string[]) => {
-    const unique = Array.from(new Set((data ?? []).filter(Boolean)));
-    unique.sort((a, b) => a.localeCompare(b));
-    return unique;
-  };
+  const human = useMemo(() => formatHumanDate(isoToLocalDate(dateISO)), [dateISO]);
 
   const loadAvailability = async () => {
     if (!serviceId || !dateISO) return;
@@ -65,7 +58,9 @@ export default function DisponibilidadPanel() {
       const data = await getDisponibilidad(Number(serviceId), dateISO);
       setSlots(normalizeSlots(data));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "No se pudo cargar disponibilidad");
+      toast.error(
+        e instanceof Error ? e.message : "No se pudo cargar disponibilidad"
+      );
       setSlots([]);
     } finally {
       setLoading(false);
@@ -74,6 +69,7 @@ export default function DisponibilidadPanel() {
 
   useEffect(() => {
     loadAvailability();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceId, dateISO]);
 
   const cardBase =

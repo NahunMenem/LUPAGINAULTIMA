@@ -1,7 +1,7 @@
 //components/admin/disponibilidad/ConfirmarSlotDialog.tsx
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import {
   Dialog,
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { reservarTurno } from "@/lib/apiTurnos";
 import { cn } from "@/lib/utils";
+import { toHHMM } from "@/lib/date";
 
 export default function ConfirmarSlotDialog(props: {
   open: boolean;
@@ -28,12 +29,13 @@ export default function ConfirmarSlotDialog(props: {
   const [phone, setPhone] = useState("5490000000000");
   const [saving, setSaving] = useState(false);
 
+  const hora = useMemo(() => toHHMM(props.time), [props.time]);
+
   const confirm = async () => {
-    if (!props.serviceId || !props.dateISO || !props.time) {
+    if (!props.serviceId || !props.dateISO || !hora) {
       toast.error("Datos incompletos para reservar");
       return;
     }
-
     if (saving) return;
 
     setSaving(true);
@@ -41,7 +43,7 @@ export default function ConfirmarSlotDialog(props: {
       await reservarTurno({
         servicio_id: Number(props.serviceId),
         fecha: props.dateISO,
-        hora: props.time,
+        hora,
         cliente_nombre: name.trim() || "Cliente",
         cliente_telefono: phone.trim() || "-",
       });
@@ -76,19 +78,16 @@ export default function ConfirmarSlotDialog(props: {
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent className="max-w-md rounded-3xl border border-white/40 bg-white/90 shadow-xl backdrop-blur">
         <DialogHeader>
-          <DialogTitle className="text-zinc-900">
-            Confirmar turno
-          </DialogTitle>
+          <DialogTitle className="text-zinc-900">Confirmar turno</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-2 text-sm text-zinc-700">
           <div>
-            Servicio:{" "}
-            <span className="font-semibold">{props.serviceName}</span>
+            Servicio: <span className="font-semibold">{props.serviceName}</span>
           </div>
           <div className="capitalize">Fecha: {props.dateHuman}</div>
           <div>
-            Hora: <span className="font-semibold">{props.time}</span>
+            Hora: <span className="font-semibold">{hora}</span>
           </div>
         </div>
 
@@ -118,11 +117,7 @@ export default function ConfirmarSlotDialog(props: {
           >
             Cancelar
           </Button>
-          <Button
-            className={primaryGreenBtn}
-            onClick={confirm}
-            disabled={saving}
-          >
+          <Button className={primaryGreenBtn} onClick={confirm} disabled={saving}>
             {saving ? "Confirmando..." : "Confirmar"}
           </Button>
         </div>

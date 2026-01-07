@@ -140,6 +140,12 @@ export function crearHorario(body: {
   });
 }
 
+export function eliminarHorario(horarioId: number) {
+  return apiFetch<Horario>(`/horarios/${horarioId}`, {
+    method: "DELETE",
+  });
+}
+
 // ======================
 // Disponibilidad
 // ======================
