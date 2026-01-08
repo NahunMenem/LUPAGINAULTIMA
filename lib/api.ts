@@ -1,13 +1,14 @@
 // lib/api.ts
-export const API_BASE =
-  (process.env.NEXT_PUBLIC_API_BASE || "").replace(/\/$/, "");
+export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || "").replace(/\/$/, "");
 
-type AnyObj = Record<string, any>;
+type AnyObj = Record<string, unknown>;
 
 async function readError(res: Response) {
   try {
     const data = (await res.json()) as AnyObj;
-    return data?.detail || data?.message || `Error ${res.status}`;
+    const detail = typeof data?.detail === "string" ? data.detail : null;
+    const message = typeof data?.message === "string" ? data.message : null;
+    return detail || message || `Error ${res.status}`;
   } catch {
     return `Error ${res.status}`;
   }

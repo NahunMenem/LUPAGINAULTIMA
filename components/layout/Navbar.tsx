@@ -1,10 +1,9 @@
 //compnents/layout/Navbar.tsx
-
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, UserRound, LogOut } from "lucide-react";
 
@@ -29,22 +28,11 @@ export default function Navbar() {
   const router = useRouter();
 
   const nav = useMemo(() => siteConfig.nav, []);
-
   const isAdminRoute = pathname?.startsWith("/admin");
-
-  // ✅ FIX Hydration: no calculamos isAdmin en SSR/render
-  const [mounted, setMounted] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const role = getCookieClient("js_role");
-    setIsAdmin(role === "admin");
-  }, []);
+  const isAdmin = getCookieClient("js_role") === "admin";
 
   const handleLogout = () => {
     deleteCookieClient("js_role");
-    setIsAdmin(false);
     setOpen(false);
     router.replace("/admin/login");
     router.refresh();
@@ -57,11 +45,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between">
-        <Link
-          href="/"
-          className="flex items-center gap-3"
-          onClick={() => setOpen(false)}
-        >
+        <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
           <div className="relative h-9 w-9 overflow-hidden rounded-xl border bg-white">
             <Image
               src="/logo.jpg"
@@ -77,9 +61,7 @@ export default function Navbar() {
             <p className="font-(family-name:--font-pinyon) text-[20px] leading-none">
               Julieta Studio
             </p>
-            <p className="text-xs tracking-wide text-muted-foreground">
-              Estética • Beauty
-            </p>
+            <p className="text-xs tracking-wide text-muted-foreground">Estética • Beauty</p>
           </div>
         </Link>
 
@@ -92,9 +74,7 @@ export default function Navbar() {
                 href={item.href}
                 className={[
                   "text-sm font-medium transition-colors",
-                  active
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 ].join(" ")}
               >
                 {item.label}
@@ -108,16 +88,9 @@ export default function Navbar() {
             <Link href="/turnos">Reservar turno</Link>
           </Button>
 
-          {/* Admin/Salir (solo desktop, oculto dentro del panel admin) */}
           {!isAdminRoute && (
             <>
-              {/* ✅ SSR/primer render: siempre lo mismo para no romper hydration */}
-              {!mounted ? (
-                <span
-                  className={adminIconBase + " opacity-0 pointer-events-none"}
-                  aria-hidden="true"
-                />
-              ) : isAdmin ? (
+              {isAdmin ? (
                 <button
                   type="button"
                   onClick={handleLogout}

@@ -1,7 +1,7 @@
 //components/admin/caja/AdminCaja.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import SectionTitle from "@/components/admin/ui/SectionTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ export default function AdminCaja() {
   const [data, setData] = useState<CajaResp | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await getCaja(fromISO, toISO);
@@ -23,11 +23,11 @@ export default function AdminCaja() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fromISO, toISO]);
 
   useEffect(() => {
     load();
-  }, [fromISO, toISO]);
+  }, [load]);
 
   const total = useMemo(() => data?.total_general ?? 0, [data]);
 
@@ -118,10 +118,7 @@ export default function AdminCaja() {
                           {m.metodo}
                         </div>
 
-                        <Badge
-                          variant="outline"
-                          className={badgeMoney}
-                        >
+                        <Badge variant="outline" className={badgeMoney}>
                           ${m.total}
                         </Badge>
                       </div>

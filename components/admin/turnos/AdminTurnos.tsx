@@ -1,7 +1,7 @@
 //components/admin/turnos/AdminTurnos.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import SectionTitle from "@/components/admin/ui/SectionTitle";
@@ -85,15 +85,13 @@ export default function AdminTurnos() {
   const [confirmTurno, setConfirmTurno] = useState<Turno | null>(null);
 
   const [payMethod, setPayMethod] = useState<PayMethod>("efectivo");
-  const [payMonto, setPayMonto] = useState<string>("");
-  const [paySure, setPaySure] = useState(false);
 
   const human = useMemo(
     () => formatHumanDate(new Date(dateISO + "T00:00:00")),
     [dateISO]
   );
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -106,11 +104,11 @@ export default function AdminTurnos() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateISO]);
 
   useEffect(() => {
     load();
-  }, [dateISO]);
+  }, [load]);
 
   const grouped = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -150,37 +148,65 @@ export default function AdminTurnos() {
     return `https://wa.me/${clean}?text=${texto}`;
   };
 
-  const getMontoDefault = (t: Turno) => {
-    const servicio = services.find((s) => s.id === t.servicio_id);
-    return Number(servicio?.precio ?? 0) || 0;
-  };
+  const getMonto = useCallback(
+    (t: Turno) => {
+      const servicio = services.find((s) => s.id === t.servicio_id);
+      return Number(servicio?.precio ?? 0) || 0;
+    },
+    [services]
+  );
 
   const openConfirm = (action: ConfirmAction, t: Turno) => {
     setConfirmAction(action);
     setConfirmTurno(t);
-
-    if (action === "pay") {
-      const monto = getMontoDefault(t);
-      setPayMethod("efectivo");
-      setPayMonto(String(monto));
-      setPaySure(false);
-    }
-
+    if (action === "pay") setPayMethod("efectivo");
     setConfirmOpen(true);
   };
+
+  const runConfirmedAction = async () => {
+    if (!confirmTurno) return;
+
+    const t = confirmTurno;
+    setBusyId(t.id);
+
+    try {
+      if (confirmAction === "delete") {
+        await eliminarTurno(t.id);
+        toast.success("🗑️ Turno eliminado");
+      }
+
+      if (confirmAction === "confirm") {
+        await confirmarTurno(t.id);
+        toast.success("✅ Turno confirmado");
+      }
+
+      if (confirmAction === "pay") {
+        const monto = getMonto(t);
+        await registrarPago({ turno_id: t.id, metodo: payMethod, monto });
+        toast.success(`💰 Pago registrado (${payMethod}) · $${monto}`);
+      }
+
+      setConfirmOpen(false);
+      setConfirmTurno(null);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ocurrió un error");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const inputBase =
+    "rounded-2xl bg-white/90 text-zinc-900 shadow-sm border-zinc-200/80 focus-visible:ring-2 focus-visible:ring-pink-500/40 focus-visible:border-pink-400/60 dark:text-zinc-900 dark:[color-scheme:light]";
+
+  const cardBase =
+    "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
 
   const payLabel = useMemo(() => {
     if (payMethod === "efectivo") return "Efectivo";
     if (payMethod === "tarjeta") return "Tarjeta";
     return "Transferencia";
   }, [payMethod]);
-
-  const parsedMonto = useMemo(() => {
-    const n = Number(String(payMonto).replace(",", "."));
-    return Number.isFinite(n) ? n : 0;
-  }, [payMonto]);
-
-  const canPay = confirmAction !== "pay" ? true : paySure && parsedMonto > 0;
 
   const confirmTexts = useMemo(() => {
     const t = confirmTurno;
@@ -204,74 +230,14 @@ export default function AdminTurnos() {
       };
     }
 
+    const monto = t ? getMonto(t) : 0;
     return {
       title: "Registrar pago",
-      description: `Vas a registrar un pago (${payLabel}) por $${parsedMonto} para (${baseTitle}). Revisá y confirmá.`,
-      actionLabel: `Sí, registrar pago`,
+      description: `Vas a registrar el pago por $${monto} para (${baseTitle}). Elegí el método y confirmá.`,
+      actionLabel: `Sí, registrar pago (${payLabel})`,
       actionClass: "bg-amber-600 hover:bg-amber-700 text-white",
     };
-  }, [confirmAction, confirmTurno, payLabel, parsedMonto]);
-
-  const runConfirmedAction = async () => {
-    if (!confirmTurno) return;
-
-    const t = confirmTurno;
-    setBusyId(t.id);
-
-    try {
-      if (confirmAction === "delete") {
-        await eliminarTurno(t.id);
-        toast.success("🗑️ Turno eliminado");
-      }
-
-      if (confirmAction === "confirm") {
-        await confirmarTurno(t.id);
-        toast.success("✅ Turno confirmado");
-      }
-
-      if (confirmAction === "pay") {
-        if (parsedMonto <= 0) {
-          toast.error("El monto debe ser mayor a 0");
-          return;
-        }
-        if (!paySure) {
-          toast.error("Marcá la confirmación antes de registrar el pago");
-          return;
-        }
-
-        await registrarPago({
-          turno_id: t.id,
-          metodo: payMethod,
-          monto: parsedMonto,
-        });
-
-        toast.success(`💰 Pago registrado (${payMethod}) · $${parsedMonto}`);
-      }
-
-      setConfirmOpen(false);
-      setConfirmTurno(null);
-      await load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Ocurrió un error");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const inputBase =
-    "rounded-2xl bg-white/90 text-zinc-900 shadow-sm border-zinc-200/80 " +
-    "focus-visible:ring-2 focus-visible:ring-pink-500/40 focus-visible:border-pink-400/60 " +
-    "dark:text-zinc-900 dark:[color-scheme:light]";
-
-  const cardBase =
-    "rounded-3xl border border-white/40 bg-white/65 shadow-[0_10px_30px_-18px_rgba(0,0,0,.35)] backdrop-blur";
-
-  // ✅ Input específico para el modal (para que SIEMPRE se vea el valor en dark)
-  const payInputClass =
-    "rounded-2xl border shadow-sm " +
-    "bg-white/90 text-zinc-900 border-zinc-200/80 placeholder:text-zinc-400 " +
-    "focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-300/70 " +
-    "dark:bg-zinc-900/40 dark:text-zinc-100 dark:border-white/10 dark:placeholder:text-zinc-400";
+  }, [confirmAction, confirmTurno, payLabel, payMethod, getMonto]);
 
   return (
     <div className="grid gap-6">
@@ -320,7 +286,9 @@ export default function AdminTurnos() {
         <Card key={g.serviceId} className={cardBase}>
           <CardContent className="p-4 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-base font-semibold text-zinc-900">{g.serviceName}</div>
+              <div className="text-base font-semibold text-zinc-900">
+                {g.serviceName}
+              </div>
               <Badge className="rounded-full border border-zinc-300/70 bg-white/70 text-zinc-700">
                 {g.items.length} turno{g.items.length === 1 ? "" : "s"}
               </Badge>
@@ -343,18 +311,24 @@ export default function AdminTurnos() {
                           <div className="grid h-8 w-8 place-items-center rounded-xl bg-pink-500/10 ring-1 ring-pink-500/15">
                             <FaClock className="h-4 w-4 text-pink-700" />
                           </div>
-                          <div className="text-lg font-semibold text-zinc-900">{hhmm(t.hora)}</div>
+                          <div className="text-lg font-semibold text-zinc-900">
+                            {hhmm(t.hora)}
+                          </div>
                         </div>
 
                         <div className="mt-2 text-sm text-zinc-700">
-                          {t.cliente_nombre} <span className="text-zinc-400">·</span> {t.cliente_telefono}
+                          {t.cliente_nombre}{" "}
+                          <span className="text-zinc-400">·</span>{" "}
+                          {t.cliente_telefono}
                         </div>
 
                         <div className="mt-3 flex flex-wrap items-center gap-2">
                           <span
                             className={cn(
                               "inline-flex items-center rounded-full border bg-white px-3 py-1 text-xs font-medium",
-                              paid ? "border-emerald-200 text-emerald-700" : "border-zinc-300 text-zinc-600"
+                              paid
+                                ? "border-emerald-200 text-emerald-700"
+                                : "border-zinc-300 text-zinc-600"
                             )}
                           >
                             {paid ? `Pagado ($${t.total_pagado})` : "Sin pago"}
@@ -363,7 +337,9 @@ export default function AdminTurnos() {
                           <span
                             className={cn(
                               "inline-flex items-center rounded-full border bg-white px-3 py-1 text-xs font-medium",
-                              confirmed ? "border-pink-200 text-pink-700" : "border-zinc-300 text-zinc-600"
+                              confirmed
+                                ? "border-pink-200 text-pink-700"
+                                : "border-zinc-300 text-zinc-600"
                             )}
                           >
                             {confirmed ? "Confirmado" : "Pendiente"}
@@ -379,7 +355,10 @@ export default function AdminTurnos() {
                           title="WhatsApp"
                           className={cn("inline-flex", isBusy && "opacity-60")}
                         >
-                          <IconBtn title="WhatsApp" className="hover:bg-emerald-50 hover:border-emerald-200">
+                          <IconBtn
+                            title="WhatsApp"
+                            className="hover:bg-emerald-50 hover:border-emerald-200"
+                          >
                             <FaWhatsapp className="h-4 w-4 text-emerald-700" />
                           </IconBtn>
                         </a>
@@ -446,71 +425,38 @@ export default function AdminTurnos() {
           </AlertDialogHeader>
 
           {confirmAction === "pay" && (
-            <div className="mt-3 grid gap-3">
-              <div className="grid gap-2">
-                <div className="text-sm font-semibold">Método de pago</div>
-                <div className="grid gap-2">
-                  {([
-                    { v: "efectivo", label: "Efectivo" },
-                    { v: "tarjeta", label: "Tarjeta" },
-                    { v: "transferencia", label: "Transferencia" },
-                  ] as const).map((m) => (
-                    <label
-                      key={m.v}
-                      className={cn(
-                        "flex items-center justify-between rounded-2xl border bg-white/85 px-4 py-3 text-sm",
-                        "dark:bg-zinc-900/30",
-                        payMethod === m.v
-                          ? "border-amber-200 ring-2 ring-amber-500/20"
-                          : "border-zinc-200/80 dark:border-white/10"
-                      )}
-                    >
-                      <span className="font-medium">{m.label}</span>
-                      <input
-                        type="radio"
-                        name="payMethod"
-                        value={m.v}
-                        checked={payMethod === m.v}
-                        onChange={() => setPayMethod(m.v)}
-                        className="h-4 w-4 accent-amber-600"
-                      />
-                    </label>
-                  ))}
-                </div>
+            <div className="mt-3 grid gap-2">
+              <div className="text-sm font-semibold text-zinc-900">
+                Método de pago
               </div>
 
               <div className="grid gap-2">
-                <div className="text-sm font-semibold">Monto</div>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step="1"
-                  value={payMonto}
-                  onChange={(e) => setPayMonto(e.target.value)}
-                  className={payInputClass}
-                />
-                <div className="text-xs text-muted-foreground">
-                  Se registra exactamente este monto en caja.
-                </div>
-                {parsedMonto <= 0 && (
-                  <div className="text-xs text-rose-600">
-                    El monto debe ser mayor a 0.
-                  </div>
-                )}
+                {([
+                  { v: "efectivo", label: "Efectivo" },
+                  { v: "tarjeta", label: "Tarjeta" },
+                  { v: "transferencia", label: "Transferencia" },
+                ] as const).map((m) => (
+                  <label
+                    key={m.v}
+                    className={cn(
+                      "flex items-center justify-between rounded-2xl border bg-white/85 px-4 py-3 text-sm",
+                      payMethod === m.v
+                        ? "border-amber-200 ring-2 ring-amber-500/20"
+                        : "border-zinc-200/80"
+                    )}
+                  >
+                    <span className="font-medium text-zinc-900">{m.label}</span>
+                    <input
+                      type="radio"
+                      name="payMethod"
+                      value={m.v}
+                      checked={payMethod === m.v}
+                      onChange={() => setPayMethod(m.v)}
+                      className="h-4 w-4 accent-amber-600"
+                    />
+                  </label>
+                ))}
               </div>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 px-4 py-3 text-sm dark:border-white/10 dark:bg-zinc-900/30">
-                <input
-                  type="checkbox"
-                  checked={paySure}
-                  onChange={(e) => setPaySure(e.target.checked)}
-                  className="h-4 w-4 accent-amber-600"
-                />
-                <span className="text-sm">
-                  Confirmo que el método y el monto son correctos.
-                </span>
-              </label>
             </div>
           )}
 
@@ -528,7 +474,7 @@ export default function AdminTurnos() {
             <AlertDialogAction
               className={cn("rounded-full", confirmTexts.actionClass)}
               onClick={runConfirmedAction}
-              disabled={!!busyId || !canPay}
+              disabled={!!busyId}
             >
               {busyId ? "Procesando…" : confirmTexts.actionLabel}
             </AlertDialogAction>

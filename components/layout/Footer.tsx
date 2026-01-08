@@ -1,7 +1,6 @@
 //compnents/layout/Footer.tsx
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { siteConfig } from "@/lib/site";
 import { FaInstagram, FaFacebookF, FaWhatsapp, FaEnvelope } from "react-icons/fa";
@@ -22,13 +21,8 @@ export default function Footer() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    setIsAdmin(getCookie("js_role") === "admin");
-  }, [pathname]);
-
   const isAdminRoute = pathname?.startsWith("/admin");
+  const isAdmin = getCookie("js_role") === "admin";
 
   const whatsappHref = `https://wa.me/${siteConfig.whatsapp.phone}?text=${encodeURIComponent(
     siteConfig.whatsapp.message
@@ -37,7 +31,6 @@ export default function Footer() {
   const handleAdminClick = () => {
     if (isAdmin) {
       deleteCookie("js_role");
-      setIsAdmin(false);
       router.replace("/admin/login");
       router.refresh();
       return;
@@ -57,14 +50,13 @@ export default function Footer() {
           <div>
             <p className="text-lg font-semibold">{siteConfig.name}</p>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              Estudio de estética especializado en micropigmentación, cejas, pestañas y tratamientos faciales.
-              Resultados naturales y prolijos.
+              Estudio de estética especializado en micropigmentación, cejas, pestañas y tratamientos
+              faciales. Resultados naturales y prolijos.
             </p>
           </div>
 
           <div>
             <p className="text-sm font-semibold">Contacto</p>
-
             <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
               <a
                 href={whatsappHref}
@@ -87,7 +79,6 @@ export default function Footer() {
               <p className="text-xs">San Juan Capital, Argentina</p>
             </div>
 
-            {/* Admin en mobile (solo ícono como el nav, no aparece en /admin) */}
             {!isAdminRoute && (
               <div className="mt-5 md:hidden">
                 <button
@@ -105,7 +96,6 @@ export default function Footer() {
 
           <div>
             <p className="text-sm font-semibold">Seguinos</p>
-
             <div className="mt-4 flex items-center gap-4">
               <a
                 href="https://instagram.com/"
