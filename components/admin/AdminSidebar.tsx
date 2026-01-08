@@ -109,7 +109,7 @@ export default function AdminSidebar({ collapsed, setCollapsed }: Props) {
       />
 
       {/* DESKTOP */}
-      <aside className={cn(desktopBase, collapsed ? "w-[92px]" : "w-[292px]")}>
+      <aside className={cn(desktopBase, collapsed ? "w-23" : "w-73")}>
         <div className="flex h-full flex-col p-3">
           <div
             className={cn(

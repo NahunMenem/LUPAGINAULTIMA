@@ -30,8 +30,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
         <div className="min-w-0">
           <AdminTopbar title={title} />
+
           <main className="px-4 pb-8 md:px-6">
-            <div className="rounded-3xl border bg-white/70 p-4 shadow-sm backdrop-blur md:p-6 md:max-w-[1200px] md:mx-auto">
+            <div className="rounded-3xl border bg-white/70 p-4 shadow-sm backdrop-blur md:mx-auto md:max-w-300 md:p-6">
               {children}
             </div>
           </main>

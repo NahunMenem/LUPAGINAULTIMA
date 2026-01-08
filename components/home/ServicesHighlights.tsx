@@ -226,10 +226,10 @@ function ServiceCard({
 function Skeleton() {
   return (
     <>
-      <Card className="h-[260px] rounded-3xl border bg-card/60 p-7" />
-      <Card className="h-[260px] rounded-3xl border bg-card/60 p-7" />
-      <Card className="h-[260px] rounded-3xl border bg-card/60 p-7" />
-      <Card className="h-[260px] rounded-3xl border bg-card/60 p-7" />
+      <Card className="h-65 rounded-3xl border bg-card/60 p-7" />
+      <Card className="h-65 rounded-3xl border bg-card/60 p-7" />
+      <Card className="h-65 rounded-3xl border bg-card/60 p-7" />
+      <Card className="h-65 rounded-3xl border bg-card/60 p-7" />
     </>
   );
 }
