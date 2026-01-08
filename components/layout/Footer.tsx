@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { siteConfig } from "@/lib/site";
 import { FaInstagram, FaFacebookF, FaWhatsapp, FaEnvelope } from "react-icons/fa";
+import { UserRound, LogOut } from "lucide-react";
 
 function getCookie(name: string) {
   if (typeof document === "undefined") return null;
@@ -44,6 +45,11 @@ export default function Footer() {
     router.push("/admin/login");
   };
 
+  const adminIconBase =
+    "inline-flex h-10 w-10 items-center justify-center rounded-full border " +
+    "bg-background/40 text-muted-foreground transition hover:bg-background/70 hover:text-foreground " +
+    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-(--brand-pink-soft)";
+
   return (
     <footer className="border-t bg-background/60 backdrop-blur">
       <div className="container-page py-12 font-(family-name:--font-poppins)">
@@ -81,15 +87,17 @@ export default function Footer() {
               <p className="text-xs">San Juan Capital, Argentina</p>
             </div>
 
-            {/* Admin en mobile (no aparece dentro del panel /admin) */}
+            {/* Admin en mobile (solo ícono como el nav, no aparece en /admin) */}
             {!isAdminRoute && (
               <div className="mt-5 md:hidden">
                 <button
                   type="button"
                   onClick={handleAdminClick}
-                  className="w-full rounded-2xl border bg-background/40 px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-background/70 hover:text-foreground"
+                  className={adminIconBase}
+                  aria-label={isAdmin ? "Cerrar sesión admin" : "Ingresar a admin"}
+                  title={isAdmin ? "Cerrar sesión" : "Admin"}
                 >
-                  {isAdmin ? "Cerrar sesión (Admin)" : "Panel Admin"}
+                  {isAdmin ? <LogOut className="h-5 w-5" /> : <UserRound className="h-5 w-5" />}
                 </button>
               </div>
             )}

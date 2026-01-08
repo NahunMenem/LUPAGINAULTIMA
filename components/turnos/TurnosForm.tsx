@@ -12,11 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { siteConfig } from "@/lib/site";
 import { toISODate } from "@/lib/date";
@@ -34,7 +30,6 @@ import {
 type BookingMode = "web" | "whatsapp";
 const LS_KEY = "turnos_draft";
 
-// Normaliza horas: "HH:MM:SS" -> "HH:MM"
 function hhmm(h: string) {
   return h?.slice(0, 5) ?? "";
 }
@@ -91,9 +86,6 @@ export default function TurnosForm() {
 
   const [submitting, setSubmitting] = useState(false);
 
-  /* =========================
-     Load servicios
-  ========================= */
   useEffect(() => {
     const loadServices = async () => {
       setServicesLoading(true);
@@ -106,9 +98,7 @@ export default function TurnosForm() {
           setSelectedServiceId(sv[0].id);
         }
       } catch (e) {
-        setServicesError(
-          e instanceof Error ? e.message : "Error cargando servicios"
-        );
+        setServicesError(e instanceof Error ? e.message : "Error cargando servicios");
       } finally {
         setServicesLoading(false);
       }
@@ -118,9 +108,6 @@ export default function TurnosForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* =========================
-     Load draft desde WhatsApp
-  ========================= */
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
@@ -139,9 +126,6 @@ export default function TurnosForm() {
     } catch {}
   }, [services]);
 
-  /* =========================
-     Load disponibilidad
-  ========================= */
   useEffect(() => {
     const loadSlots = async () => {
       if (!selectedServiceId || !dateISO) return;
@@ -153,12 +137,7 @@ export default function TurnosForm() {
 
       try {
         const list = await getDisponibilidad(selectedServiceId, dateISO);
-
-        // normalizamos siempre HH:MM
-        const clean = Array.from(
-          new Set(list.map((t) => hhmm(t)))
-        ).sort();
-
+        const clean = Array.from(new Set(list.map((t) => hhmm(t)))).sort();
         setSlots(clean);
       } catch (e) {
         setSlotsError(
@@ -171,14 +150,6 @@ export default function TurnosForm() {
 
     loadSlots();
   }, [selectedServiceId, dateISO]);
-
-  /* =========================
-     Computed
-  ========================= */
-  const formattedDateHuman = useMemo(() => {
-    if (!date) return "";
-    return format(date, "EEEE dd/MM", { locale: es });
-  }, [date]);
 
   const summary = useMemo(() => {
     return {
@@ -213,9 +184,6 @@ export default function TurnosForm() {
       !submitting
   );
 
-  /* =========================
-     Submit
-  ========================= */
   const submitReserva = async () => {
     if (!canSubmit || !selectedServiceId || !dateISO) return;
 
@@ -224,7 +192,7 @@ export default function TurnosForm() {
       await reservarTurno({
         servicio_id: selectedServiceId,
         fecha: dateISO,
-        hora: hhmm(time), // 👈 SIEMPRE HH:MM
+        hora: hhmm(time),
         cliente_nombre: name.trim(),
         cliente_telefono: phone.trim(),
       });
@@ -236,26 +204,21 @@ export default function TurnosForm() {
       setName("");
       setPhone("");
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "No se pudo reservar el turno"
-      );
+      toast.error(e instanceof Error ? e.message : "No se pudo reservar el turno");
     } finally {
       setSubmitting(false);
     }
   };
 
-  /* =========================
-     Render
-  ========================= */
   return (
-    <Card className="rounded-3xl border bg-background/60 backdrop-blur">
+    <Card
+      id="turnos-form"
+      className="rounded-3xl border bg-background/60 backdrop-blur"
+    >
       <CardContent className="p-6 md:p-8">
-        {/* HEADER */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs tracking-widest text-muted-foreground">
-              RESERVA
-            </p>
+            <p className="text-xs tracking-widest text-muted-foreground">RESERVA</p>
             <h2 className="mt-2 text-lg font-semibold md:text-xl">
               Sacá tu turno (web o WhatsApp)
             </h2>
@@ -266,9 +229,7 @@ export default function TurnosForm() {
               type="button"
               onClick={() => setMode("web")}
               className={`rounded-full px-4 py-2 text-xs font-medium ${
-                mode === "web"
-                  ? "bg-(--brand-pink-soft)"
-                  : "text-muted-foreground"
+                mode === "web" ? "bg-(--brand-pink-soft)" : "text-muted-foreground"
               }`}
             >
               Web
@@ -287,7 +248,6 @@ export default function TurnosForm() {
           </div>
         </div>
 
-        {/* MODO WHATSAPP */}
         {mode === "whatsapp" && (
           <div className="mt-6 rounded-2xl border p-5">
             <Button asChild className="w-full rounded-full">
@@ -298,10 +258,8 @@ export default function TurnosForm() {
           </div>
         )}
 
-        {/* MODO WEB */}
         {mode === "web" && (
           <div className="mt-6">
-            {/* PASO 1 */}
             {step === 1 && (
               <>
                 {servicesError && (
@@ -350,9 +308,14 @@ export default function TurnosForm() {
               </>
             )}
 
-            {/* PASO 2 */}
             {step === 2 && (
               <>
+                {slotsError && (
+                  <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                    {slotsError}
+                  </div>
+                )}
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="rounded-full">
@@ -367,28 +330,31 @@ export default function TurnosForm() {
                       mode="single"
                       selected={date}
                       onSelect={setDate}
-                      disabled={(d) =>
-                        d <
-                        new Date(new Date().setHours(0, 0, 0, 0))
-                      }
+                      disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
                     />
                   </PopoverContent>
                 </Popover>
 
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {slots.map((t) => (
-                    <Button
-                      key={t}
-                      variant="outline"
-                      onClick={() => setTime(t)}
-                      className={`rounded-2xl ${
-                        t === time ? "border-(--brand-pink-soft)" : ""
-                      }`}
-                    >
-                      {t}
-                    </Button>
-                  ))}
-                </div>
+                {slotsLoading ? (
+                  <div className="mt-4 rounded-2xl border p-4 text-sm">
+                    Cargando horarios…
+                  </div>
+                ) : (
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    {slots.map((t) => (
+                      <Button
+                        key={t}
+                        variant="outline"
+                        onClick={() => setTime(t)}
+                        className={`rounded-2xl ${
+                          t === time ? "border-(--brand-pink-soft)" : ""
+                        }`}
+                      >
+                        {t}
+                      </Button>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-5">
                   <Button
@@ -402,7 +368,6 @@ export default function TurnosForm() {
               </>
             )}
 
-            {/* PASO 3 */}
             {step === 3 && (
               <>
                 <Input
