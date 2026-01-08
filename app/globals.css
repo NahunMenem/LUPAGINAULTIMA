@@ -53,7 +53,6 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
 
-  /* Marca rosada */
   --primary: oklch(0.78 0.11 350);
   --primary-foreground: oklch(1 0 0);
 
@@ -70,14 +69,12 @@
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.78 0.11 350);
 
-  /* Extras UI */
   --hero-bg: oklch(0.99 0.02 350);
   --brand-pink-soft: oklch(0.94 0.03 350);
 }
 
 /* ===========================
    JULIETA STUDIO – DARK
-   (charcoal premium)
    =========================== */
 .dark {
   --background: oklch(0.17 0.01 285.823);
@@ -110,6 +107,40 @@
 }
 
 /* ===========================
+   FIX ADMIN – bg-white en dark
+   =========================== */
+@layer base {
+  .dark input.bg-white,
+  .dark input[class*="bg-white"],
+  .dark textarea.bg-white,
+  .dark textarea[class*="bg-white"],
+  .dark button.bg-white,
+  .dark button[class*="bg-white"] {
+    color: #18181b; /* zinc-900 */
+  }
+
+  .dark input.bg-white::placeholder,
+  .dark input[class*="bg-white"]::placeholder,
+  .dark textarea.bg-white::placeholder,
+  .dark textarea[class*="bg-white"]::placeholder {
+    color: #a1a1aa; /* zinc-400 */
+  }
+
+  /* Date picker fix */
+  .dark input[type="date"] {
+    color-scheme: light;
+  }
+
+  .dark input[type="date"]::-webkit-datetime-edit,
+  .dark input[type="date"]::-webkit-datetime-edit-text,
+  .dark input[type="date"]::-webkit-datetime-edit-month-field,
+  .dark input[type="date"]::-webkit-datetime-edit-day-field,
+  .dark input[type="date"]::-webkit-datetime-edit-year-field {
+    color: #18181b;
+  }
+}
+
+/* ===========================
    HELPERS VISUALES
    =========================== */
 .container-page {
@@ -119,7 +150,6 @@
   padding-inline: 1rem;
 }
 
-/* ✅ SOFT GRID (NO APAGA CONTENIDO) */
 .soft-grid {
   position: relative;
 }
@@ -142,7 +172,6 @@
   opacity: 0.14;
 }
 
-/* Glow rosado */
 .glow {
   position: absolute;
   inset: -120px;
@@ -159,72 +188,14 @@
   background: var(--brand-pink-soft);
 }
 
-/* Swiper pagination – Julieta Studio (rosado) */
-.js-testimonials-swiper .swiper-pagination-bullet {
-  width: 8px;
-  height: 8px;
-  background: color-mix(in oklab, var(--brand-pink-soft) 55%, transparent);
-  opacity: 1;
-  transform: scale(0.92);
-  transition: transform 200ms ease, background-color 200ms ease;
-}
-
-.js-testimonials-swiper .swiper-pagination-bullet-active {
-  background: var(--brand-pink-soft);
-  transform: scale(1.15);
-}
-
-.results-swiper {
-  position: relative;
-}
-
-.results-progress {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  z-index: 10;
-}
-
-.results-progress svg {
-  width: 44px;
-  height: 44px;
-  transform: rotate(-90deg);
-}
-
-.results-progress .track {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.16);
-  stroke-width: 4;
-}
-
-.results-progress .bar {
-  fill: none;
-  stroke: var(--brand-pink-soft);
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-dasharray: 125.6;
-  stroke-dashoffset: calc(125.6 * var(--progress, 0));
-  transition: stroke-dashoffset 120ms linear;
-}
-
-.results-progress span {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: hsl(var(--primary));
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.06);
-}
-
-
-
+/* ===========================
+   BASE TAILWIND
+   =========================== */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

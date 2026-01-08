@@ -12,7 +12,7 @@ export default function AboutInfoCards() {
   )}`;
 
   const mapsHref =
-    "https://www.google.com/maps?q=Av.+Ignacio+de+la+Roza+1234,+San+Juan,+Argentina";
+    "https://www.google.com/maps/place/Av.+España+39,+J5400DNA+San+Juan,+Argentina";
 
   return (
     <section className="mt-8 pb-10 font-(family-name:--font-poppins)">
@@ -21,9 +21,12 @@ export default function AboutInfoCards() {
         <Card className="h-full rounded-4xl border bg-background/60 backdrop-blur">
           <CardContent className="p-6">
             <p className="text-sm font-semibold">Horarios</p>
+
             <p className="mt-2 text-sm text-muted-foreground">
-              Lunes a Sábado • 09:00 a 19:00
+              Lunes a Sábado • 08:30 a 12:00 hs <br />
+              18:00 a 21:00 hs
             </p>
+
             <p className="mt-3 text-xs text-muted-foreground">
               Cupos limitados según agenda.
             </p>
@@ -64,7 +67,7 @@ export default function AboutInfoCards() {
               <div>
                 <p className="text-sm font-semibold">Ubicación</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Av. Ignacio de la Roza 1234
+                  Av. España 39
                   <br />
                   San Juan Capital, Argentina
                 </p>
@@ -89,7 +92,7 @@ export default function AboutInfoCards() {
             <div className="mt-4 hidden overflow-hidden rounded-3xl border md:block">
               <iframe
                 title="Mapa Julieta Studio"
-                src="https://www.google.com/maps?q=Av.+Ignacio+de+la+Roza+1234,+San+Juan,+Argentina&output=embed"
+                src="https://www.google.com/maps?q=Av.+España+39,+San+Juan,+Argentina&output=embed"
                 className="h-45 w-full"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
@@ -102,6 +105,7 @@ export default function AboutInfoCards() {
         <Card className="h-full rounded-4xl border bg-(--hero-bg)">
           <CardContent className="p-6">
             <p className="text-sm font-semibold">Contacto rápido</p>
+
             <p className="mt-2 text-sm text-muted-foreground">
               WhatsApp es la forma más directa para coordinar horarios y resolver
               dudas al instante.

@@ -1,33 +1,62 @@
+//compnents/layout/Footer.tsx
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
 import { siteConfig } from "@/lib/site";
-import {
-  FaInstagram,
-  FaFacebookF,
-  FaWhatsapp,
-  FaEnvelope,
-} from "react-icons/fa";
+import { FaInstagram, FaFacebookF, FaWhatsapp, FaEnvelope } from "react-icons/fa";
+import { UserRound, LogOut } from "lucide-react";
+
+function getCookie(name: string) {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+function deleteCookie(name: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=; path=/; max-age=0`;
+}
 
 export default function Footer() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const isAdminRoute = pathname?.startsWith("/admin");
+  const isAdmin = getCookie("js_role") === "admin";
+
   const whatsappHref = `https://wa.me/${siteConfig.whatsapp.phone}?text=${encodeURIComponent(
     siteConfig.whatsapp.message
   )}`;
+
+  const handleAdminClick = () => {
+    if (isAdmin) {
+      deleteCookie("js_role");
+      router.replace("/admin/login");
+      router.refresh();
+      return;
+    }
+    router.push("/admin/login");
+  };
+
+  const adminIconBase =
+    "inline-flex h-10 w-10 items-center justify-center rounded-full border " +
+    "bg-background/40 text-muted-foreground transition hover:bg-background/70 hover:text-foreground " +
+    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-(--brand-pink-soft)";
 
   return (
     <footer className="border-t bg-background/60 backdrop-blur">
       <div className="container-page py-12 font-(family-name:--font-poppins)">
         <div className="grid gap-8 md:grid-cols-3">
-          {/* MARCA */}
           <div>
             <p className="text-lg font-semibold">{siteConfig.name}</p>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              Estudio de estética especializado en micropigmentación, cejas,
-              pestañas y tratamientos faciales. Resultados naturales y prolijos.
+              Estudio de estética especializado en micropigmentación, cejas, pestañas y tratamientos
+              faciales. Resultados naturales y prolijos.
             </p>
           </div>
 
-          {/* CONTACTO */}
           <div>
             <p className="text-sm font-semibold">Contacto</p>
-
             <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
               <a
                 href={whatsappHref}
@@ -47,27 +76,33 @@ export default function Footer() {
                 contacto@julietastudio.com
               </a>
 
-              <p className="text-xs">
-                San Juan Capital, Argentina
-              </p>
+              <p className="text-xs">San Juan Capital, Argentina</p>
             </div>
+
+            {!isAdminRoute && (
+              <div className="mt-5 md:hidden">
+                <button
+                  type="button"
+                  onClick={handleAdminClick}
+                  className={adminIconBase}
+                  aria-label={isAdmin ? "Cerrar sesión admin" : "Ingresar a admin"}
+                  title={isAdmin ? "Cerrar sesión" : "Admin"}
+                >
+                  {isAdmin ? <LogOut className="h-5 w-5" /> : <UserRound className="h-5 w-5" />}
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* REDES */}
           <div>
             <p className="text-sm font-semibold">Seguinos</p>
-
             <div className="mt-4 flex items-center gap-4">
               <a
                 href="https://instagram.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="
-                  flex h-10 w-10 items-center justify-center
-                  rounded-full border bg-background/40
-                  transition hover:bg-(--brand-pink-soft)/20
-                "
+                className="flex h-10 w-10 items-center justify-center rounded-full border bg-background/40 transition hover:bg-(--brand-pink-soft)/20"
               >
                 <FaInstagram className="text-base" />
               </a>
@@ -77,11 +112,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
-                className="
-                  flex h-10 w-10 items-center justify-center
-                  rounded-full border bg-background/40
-                  transition hover:bg-(--brand-pink-soft)/20
-                "
+                className="flex h-10 w-10 items-center justify-center rounded-full border bg-background/40 transition hover:bg-(--brand-pink-soft)/20"
               >
                 <FaFacebookF className="text-sm" />
               </a>
@@ -91,11 +122,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
-                className="
-                  flex h-10 w-10 items-center justify-center
-                  rounded-full border bg-background/40
-                  transition hover:bg-(--brand-pink-soft)/20
-                "
+                className="flex h-10 w-10 items-center justify-center rounded-full border bg-background/40 transition hover:bg-(--brand-pink-soft)/20"
               >
                 <FaWhatsapp className="text-base" />
               </a>
@@ -103,12 +130,10 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* FOOTER BOTTOM */}
         <div className="mt-10 flex flex-col gap-2 border-t pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           <p>
             © {new Date().getFullYear()} {siteConfig.name}. Todos los derechos reservados.
           </p>
-
           <p>Hecho con cuidado y detalle ✨</p>
         </div>
       </div>

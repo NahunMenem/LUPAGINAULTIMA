@@ -1,29 +1,51 @@
+//compnents/layout/Navbar.tsx
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, X, UserRound, LogOut } from "lucide-react";
 
 import ThemeToggle from "./ThemeToggle";
 import { siteConfig } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 
+function getCookieClient(name: string) {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+function deleteCookieClient(name: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=; path=/; max-age=0`;
+}
+
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const nav = useMemo(() => siteConfig.nav, []);
+  const isAdminRoute = pathname?.startsWith("/admin");
+  const isAdmin = getCookieClient("js_role") === "admin";
+
+  const handleLogout = () => {
+    deleteCookieClient("js_role");
+    setOpen(false);
+    router.replace("/admin/login");
+    router.refresh();
+  };
+
+  const adminIconBase =
+    "hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full border " +
+    "bg-background/40 text-muted-foreground transition hover:bg-background/70 hover:text-foreground";
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between">
-        <Link
-          href="/"
-          className="flex items-center gap-3"
-          onClick={() => setOpen(false)}
-        >
+        <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
           <div className="relative h-9 w-9 overflow-hidden rounded-xl border bg-white">
             <Image
               src="/logo.jpg"
@@ -39,9 +61,7 @@ export default function Navbar() {
             <p className="font-(family-name:--font-pinyon) text-[20px] leading-none">
               Julieta Studio
             </p>
-            <p className="text-xs tracking-wide text-muted-foreground">
-              Estética • Beauty
-            </p>
+            <p className="text-xs tracking-wide text-muted-foreground">Estética • Beauty</p>
           </div>
         </Link>
 
@@ -54,9 +74,7 @@ export default function Navbar() {
                 href={item.href}
                 className={[
                   "text-sm font-medium transition-colors",
-                  active
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 ].join(" ")}
               >
                 {item.label}
@@ -69,6 +87,31 @@ export default function Navbar() {
           <Button asChild className="hidden rounded-full md:inline-flex font-medium">
             <Link href="/turnos">Reservar turno</Link>
           </Button>
+
+          {!isAdminRoute && (
+            <>
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className={adminIconBase}
+                  aria-label="Cerrar sesión admin"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              ) : (
+                <Link
+                  href="/admin/login"
+                  className={adminIconBase}
+                  aria-label="Panel admin"
+                  title="Admin"
+                >
+                  <UserRound className="h-5 w-5" />
+                </Link>
+              )}
+            </>
+          )}
 
           <ThemeToggle />
 
