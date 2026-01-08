@@ -1,118 +1,402 @@
+//components/turnos/TurnosForm.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
+import { toast } from "react-hot-toast";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-const SERVICES = [
-  "Micropigmentación (Cejas)",
-  "Micropigmentación (Labios)",
-  "Delineado permanente",
-  "Extensiones (Clásicas)",
-  "Extensiones (Volumen medio)",
-  "Extensiones (Volumen)",
-  "Mega volumen",
-  "Lifting coreano + botox",
-  "Brows (Perfilado / Diseño)",
-  "Brows (Laminado)",
-  "Brows (Henna)",
-  "Facial (Limpieza profunda)",
-  "Facial (Dermaplaning + limpieza)",
-  "Facial (Peeling enzimático)",
-  "Facial (Microneedling)",
-];
+import { siteConfig } from "@/lib/site";
+import { toISODate } from "@/lib/date";
+import {
+  listServicios,
+  getDisponibilidad,
+  reservarTurno,
+  type Service,
+} from "@/lib/apiTurnos";
+
+/* =========================
+   Utils locales
+========================= */
+
+type BookingMode = "web" | "whatsapp";
+const LS_KEY = "turnos_draft";
+
+function hhmm(h: string) {
+  return h?.slice(0, 5) ?? "";
+}
+
+function buildWhatsappHref(payload: {
+  service: string;
+  date?: string;
+  time?: string;
+  name?: string;
+  phone?: string;
+  notes?: string;
+}) {
+  const base = `https://wa.me/${siteConfig.whatsapp.phone}`;
+  const lines = [
+    "Hola! Quiero reservar un turno 💗",
+    payload.service ? `• Servicio: ${payload.service}` : null,
+    payload.date ? `• Fecha: ${payload.date}` : null,
+    payload.time ? `• Hora: ${payload.time}` : null,
+    payload.name ? `• Nombre: ${payload.name}` : null,
+    payload.phone ? `• Teléfono: ${payload.phone}` : null,
+    payload.notes ? `• Detalles: ${payload.notes}` : null,
+  ].filter(Boolean);
+
+  return `${base}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
 
 export default function TurnosForm() {
-  const [service, setService] = useState(SERVICES[0] ?? "");
+  const [mode, setMode] = useState<BookingMode>("web");
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  const helpText = useMemo(() => {
-    return "Este formulario por ahora es visual. Después lo conectamos a Flask + Postgres para disponibilidad, estados y validaciones.";
+  const [services, setServices] = useState<Service[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [servicesError, setServicesError] = useState<string | null>(null);
+
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+
+  const selectedService = useMemo(
+    () => services.find((s) => s.id === selectedServiceId) ?? null,
+    [services, selectedServiceId]
+  );
+
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const dateISO = useMemo(() => (date ? toISODate(date) : ""), [date]);
+
+  const [time, setTime] = useState<string>("");
+
+  const [slots, setSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadServices = async () => {
+      setServicesLoading(true);
+      setServicesError(null);
+      try {
+        const sv = await listServicios();
+        setServices(sv);
+
+        if (sv.length && selectedServiceId == null) {
+          setSelectedServiceId(sv[0].id);
+        }
+      } catch (e) {
+        setServicesError(e instanceof Error ? e.message : "Error cargando servicios");
+      } finally {
+        setServicesLoading(false);
+      }
+    };
+
+    loadServices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { servicio?: string; detalle?: string };
+
+      if (parsed?.detalle) setNotes(parsed.detalle);
+
+      if (parsed?.servicio && services.length) {
+        const q = parsed.servicio.toLowerCase();
+        const match =
+          services.find((s) => s.nombre.toLowerCase() === q) ||
+          services.find((s) => q.includes(s.nombre.toLowerCase()));
+        if (match) setSelectedServiceId(match.id);
+      }
+    } catch {}
+  }, [services]);
+
+  useEffect(() => {
+    const loadSlots = async () => {
+      if (!selectedServiceId || !dateISO) return;
+
+      setSlotsLoading(true);
+      setSlotsError(null);
+      setSlots([]);
+      setTime("");
+
+      try {
+        const list = await getDisponibilidad(selectedServiceId, dateISO);
+        const clean = Array.from(new Set(list.map((t) => hhmm(t)))).sort();
+        setSlots(clean);
+      } catch (e) {
+        setSlotsError(
+          e instanceof Error ? e.message : "Error cargando disponibilidad"
+        );
+      } finally {
+        setSlotsLoading(false);
+      }
+    };
+
+    loadSlots();
+  }, [selectedServiceId, dateISO]);
+
+  const summary = useMemo(() => {
+    return {
+      service: selectedService?.nombre ?? "—",
+      date: date ? format(date, "dd/MM/yyyy", { locale: es }) : "—",
+      time: time || "—",
+      duration: selectedService?.duracion_minutos
+        ? `${selectedService.duracion_minutos} min`
+        : "—",
+    };
+  }, [selectedService, date, time]);
+
+  const whatsappHref = useMemo(() => {
+    return buildWhatsappHref({
+      service: summary.service,
+      date: summary.date,
+      time,
+      name,
+      phone,
+      notes,
+    });
+  }, [summary.service, summary.date, time, name, phone, notes]);
+
+  const canGoStep2 = Boolean(selectedServiceId);
+  const canGoStep3 = Boolean(date && time);
+  const canSubmit = Boolean(
+    name.trim() &&
+      phone.trim() &&
+      selectedServiceId &&
+      dateISO &&
+      time &&
+      !submitting
+  );
+
+  const submitReserva = async () => {
+    if (!canSubmit || !selectedServiceId || !dateISO) return;
+
+    setSubmitting(true);
+    try {
+      await reservarTurno({
+        servicio_id: selectedServiceId,
+        fecha: dateISO,
+        hora: hhmm(time),
+        cliente_nombre: name.trim(),
+        cliente_telefono: phone.trim(),
+      });
+
+      toast.success("✅ Turno reservado. Te confirmamos a la brevedad 💗");
+
+      setStep(1);
+      setTime("");
+      setName("");
+      setPhone("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo reservar el turno");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <Card className="rounded-3xl border bg-background/60 backdrop-blur">
+    <Card
+      id="turnos-form"
+      className="rounded-3xl border bg-background/60 backdrop-blur"
+    >
       <CardContent className="p-6 md:p-8">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full border bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-            ✅ Confirmación por WhatsApp
-          </span>
-          <span className="inline-flex items-center rounded-full border bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-            ⏱️ Respuesta rápida
-          </span>
-          <span className="inline-flex items-center rounded-full border bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-            💗 Atención personalizada
-          </span>
-        </div>
-
-        <h2 className="mt-4 text-lg font-semibold tracking-tight md:text-xl">
-          1) Contanos qué querés hacer
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Elegí el servicio y dejá una referencia de fecha/horario. Con eso ya
-          podemos coordinar.
-        </p>
-
-        <form className="mt-6 grid gap-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="grid gap-2">
-              <label className="text-xs text-muted-foreground">Nombre</label>
-              <Input placeholder="Tu nombre" />
-            </div>
-
-            <div className="grid gap-2">
-              <label className="text-xs text-muted-foreground">WhatsApp</label>
-              <Input placeholder="Ej: 3804 123456" inputMode="tel" />
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs tracking-widest text-muted-foreground">RESERVA</p>
+            <h2 className="mt-2 text-lg font-semibold md:text-xl">
+              Sacá tu turno (web o WhatsApp)
+            </h2>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="grid gap-2">
-              <label className="text-xs text-muted-foreground">Servicio</label>
+          <div className="flex items-center gap-2 rounded-full border bg-background/40 p-1">
+            <button
+              type="button"
+              onClick={() => setMode("web")}
+              className={`rounded-full px-4 py-2 text-xs font-medium ${
+                mode === "web" ? "bg-(--brand-pink-soft)" : "text-muted-foreground"
+              }`}
+            >
+              Web
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("whatsapp")}
+              className={`rounded-full px-4 py-2 text-xs font-medium ${
+                mode === "whatsapp"
+                  ? "bg-(--brand-pink-soft)"
+                  : "text-muted-foreground"
+              }`}
+            >
+              WhatsApp
+            </button>
+          </div>
+        </div>
 
-              <div className="relative">
-                <select
-                  value={service}
-                  onChange={(e) => setService(e.target.value)}
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-(--brand-pink-soft)"
+        {mode === "whatsapp" && (
+          <div className="mt-6 rounded-2xl border p-5">
+            <Button asChild className="w-full rounded-full">
+              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                Escribir por WhatsApp
+              </a>
+            </Button>
+          </div>
+        )}
+
+        {mode === "web" && (
+          <div className="mt-6">
+            {step === 1 && (
+              <>
+                {servicesError && (
+                  <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                    {servicesError}
+                  </div>
+                )}
+
+                {servicesLoading ? (
+                  <div className="mt-4 rounded-2xl border p-4 text-sm">
+                    Cargando servicios…
+                  </div>
+                ) : (
+                  <div className="mt-4 grid gap-3">
+                    {services.map((s) => {
+                      const active = s.id === selectedServiceId;
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => setSelectedServiceId(s.id)}
+                          className={`rounded-2xl border p-4 text-left ${
+                            active
+                              ? "border-(--brand-pink-soft) bg-(--brand-pink-soft)/10"
+                              : "bg-background/40"
+                          }`}
+                        >
+                          <p className="font-semibold">{s.nombre}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {s.duracion_minutos} min • ${s.precio}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-5">
+                  <Button
+                    className="rounded-full"
+                    onClick={() => setStep(2)}
+                    disabled={!canGoStep2}
+                  >
+                    Continuar
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                {slotsError && (
+                  <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                    {slotsError}
+                  </div>
+                )}
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="rounded-full">
+                      {date
+                        ? format(date, "EEEE dd 'de' MMMM", { locale: es })
+                        : "Seleccionar fecha"}
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {slotsLoading ? (
+                  <div className="mt-4 rounded-2xl border p-4 text-sm">
+                    Cargando horarios…
+                  </div>
+                ) : (
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    {slots.map((t) => (
+                      <Button
+                        key={t}
+                        variant="outline"
+                        onClick={() => setTime(t)}
+                        className={`rounded-2xl ${
+                          t === time ? "border-(--brand-pink-soft)" : ""
+                        }`}
+                      >
+                        {t}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-5">
+                  <Button
+                    className="rounded-full"
+                    onClick={() => setStep(3)}
+                    disabled={!canGoStep3}
+                  >
+                    Continuar
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <Input
+                  placeholder="Nombre"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <Input
+                  placeholder="Teléfono"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+                <Textarea
+                  placeholder="Detalle opcional"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+
+                <Button
+                  className="mt-4 w-full rounded-full"
+                  onClick={submitReserva}
+                  disabled={!canSubmit}
                 >
-                  {SERVICES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <label className="text-xs text-muted-foreground">
-                Fecha preferida
-              </label>
-              <Input placeholder="Ej: 20/01 por la tarde" />
-            </div>
+                  {submitting ? "Reservando…" : "Confirmar turno"}
+                </Button>
+              </>
+            )}
           </div>
-
-          <div className="grid gap-2">
-            <label className="text-xs text-muted-foreground">Detalles</label>
-            <Textarea
-              placeholder="Contanos qué te gustaría lograr, si ya te hiciste algo antes, o cualquier detalle útil…"
-              className="min-h-28"
-            />
-          </div>
-
-          <div className="pt-2">
-            <Button className="w-full rounded-full">Enviar solicitud</Button>
-            <p className="mt-3 text-xs text-muted-foreground">{helpText}</p>
-          </div>
-        </form>
-
-        <div className="mt-6 rounded-2xl border bg-background/40 p-4 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Tip:</span> Si querés
-          coordinar más rápido, mandanos directamente por WhatsApp y te guiamos
-          con disponibilidad y preparación previa.
-        </div>
+        )}
       </CardContent>
     </Card>
   );

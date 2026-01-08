@@ -17,11 +17,29 @@ type Slide = {
 
 const SLIDES: Slide[] = [
   { src: "/images/resultados/r1.jpg", alt: "Resultado cejas", tag: "Cejas" },
-  { src: "/images/resultados/r2.jpg", alt: "Resultado pestañas", tag: "Pestañas" },
-  { src: "/images/resultados/r3.jpg", alt: "Resultado facial", tag: "Facial" },
-  { src: "/images/resultados/r4.jpg", alt: "Resultado micro", tag: "Micropigmentación" },
-  { src: "/images/resultados/r5.jpg", alt: "Resultado cejas 2", tag: "Cejas" },
-  { src: "/images/resultados/r6.jpg", alt: "Resultado pestañas 2", tag: "Pestañas" },
+  {
+    src: "/images/resultados/r2.jpg",
+    alt: "Resultado pestañas",
+    tag: "Pestañas",
+  },
+
+  {
+    src: "/images/resultados/facial-limpieza.jpeg",
+    alt: "Limpieza facial",
+    tag: "Limpieza Facial",
+  },
+  {
+    src: "/images/resultados/facial-extraccion.jpeg",
+    alt: "Extracción / limpieza profunda",
+    tag: "Limpieza Facial",
+  },
+
+  {
+    src: "/images/resultados/dermapen.jpeg",
+    alt: "Dermapen / microneedling",
+    tag: "Dermapen",
+  },
+  { src: "/images/resultados/labios.jpeg", alt: "Labios", tag: "Labios" },
 ];
 
 export default function ResultsCarousel() {
@@ -31,7 +49,9 @@ export default function ResultsCarousel() {
     <section className="container-page pb-16 font-(family-name:--font-poppins)">
       <div className="relative overflow-hidden rounded-4xl border bg-(--hero-bg) p-6 md:p-8">
         <div>
-          <p className="text-xs tracking-widest text-muted-foreground">RESULTADOS</p>
+          <p className="text-xs tracking-widest text-muted-foreground">
+            RESULTADOS
+          </p>
           <h3 className="mt-2 text-xl font-semibold md:text-2xl">
             Trabajos reales, detalle real
           </h3>
@@ -58,7 +78,10 @@ export default function ResultsCarousel() {
             }}
             onAutoplayTimeLeft={(_, __, progress) => {
               if (!progressRef.current) return;
-              progressRef.current.style.setProperty("--progress", String(progress));
+              progressRef.current.style.setProperty(
+                "--progress",
+                String(progress)
+              );
             }}
             className="results-swiper"
           >
@@ -93,7 +116,6 @@ export default function ResultsCarousel() {
               </SwiperSlide>
             ))}
 
-            {/* Spinner de progreso REAL */}
             <div
               className="results-progress"
               ref={progressRef}
