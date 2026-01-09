@@ -98,7 +98,7 @@ export default function Footer() {
             <p className="text-sm font-semibold">Seguinos</p>
             <div className="mt-4 flex items-center gap-4">
               <a
-                href="https://instagram.com/"
+                href="https://instagram.com/Juli.studiok"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"

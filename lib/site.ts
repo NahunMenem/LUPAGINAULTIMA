@@ -4,7 +4,7 @@ export const siteConfig = {
   description:
     "Micropigmentación, pestañas, cejas y tratamientos faciales. Reservá tu turno y resaltá tu belleza con un look natural y elegante.",
   whatsapp: {
-    phone: "5490000000000",
+    phone: "5492646308658",
     message: "Hola! Quiero consultar por turnos en Julieta Studio 💗",
   },
   nav: [
