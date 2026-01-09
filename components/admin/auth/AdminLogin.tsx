@@ -100,12 +100,6 @@ export default function AdminLogin() {
               >
                 {loading ? "Ingresando..." : "Iniciar sesión"}
               </Button>
-
-              <div className="text-center text-xs text-zinc-500">
-                Demo:{" "}
-                <span className="font-medium">admin</span> /{" "}
-                <span className="font-medium">admin123</span>
-              </div>
             </form>
           </CardContent>
         </Card>

@@ -34,9 +34,7 @@ export default function ServiceCard({ service }: Props) {
             <Link href="/turnos">Reservar</Link>
           </Button>
 
-          <Button asChild variant="outline" className="rounded-full px-5">
-            <Link href="/contacto">Consultar</Link>
-          </Button>
+
         </div>
       </CardContent>
     </Card>

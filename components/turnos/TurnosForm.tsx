@@ -344,14 +344,16 @@ export default function TurnosForm() {
                     {slots.map((t) => (
                       <Button
                         key={t}
-                        variant="outline"
                         onClick={() => setTime(t)}
-                        className={`rounded-2xl ${
-                          t === time ? "border-(--brand-pink-soft)" : ""
+                        className={`rounded-2xl transition-all ${
+                          t === time
+                            ? "bg-pink-500 text-white border-pink-500 shadow-md"
+                            : "bg-background/40 border text-foreground hover:border-pink-300"
                         }`}
                       >
                         {t}
                       </Button>
+
                     ))}
                   </div>
                 )}

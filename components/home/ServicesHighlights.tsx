@@ -162,6 +162,13 @@ function ServiceCard({
               {service.nombre}
             </h3>
 
+            {/* ✅ DESCRIPCIÓN DEL SERVICIO */}
+            {service.descripcion && (
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                {service.descripcion}
+              </p>
+            )}
+
             <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/80" />
