@@ -141,12 +141,13 @@ export default function Hero() {
               "
             >
               <Image
-                src="/images/hero-placeholder.jpg"
+                src="https://res.cloudinary.com/df3cwd4ty/image/upload/v1767990148/lu_wwiigi.jpg"
                 alt="Julieta Studio"
                 fill
                 className="object-cover transition-transform duration-500 hover:scale-[1.02]"
                 priority
               />
+
             </div>
           </motion.div>
         </motion.div>
