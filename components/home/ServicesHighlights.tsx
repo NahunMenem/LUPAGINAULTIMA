@@ -1,4 +1,3 @@
-//components/home/ServicesHighlights.tsx
 "use client";
 
 import Link from "next/link";
@@ -78,7 +77,6 @@ export default function ServicesHighlights() {
           >
             {services.map((s, idx) => {
               const Icon = ICONS[idx % ICONS.length];
-
               return (
                 <SwiperSlide key={s.id}>
                   <ServiceCard service={s} Icon={Icon} />
@@ -123,7 +121,7 @@ export default function ServicesHighlights() {
 }
 
 /* =========================
-   Card reutilizable
+   Card reutilizable (EXPANDIBLE)
 ========================= */
 function ServiceCard({
   service,
@@ -132,98 +130,105 @@ function ServiceCard({
   service: Service;
   Icon: React.ElementType;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <Card
-      className="
-        group relative h-full overflow-hidden rounded-3xl
-        border-border/70 bg-card/60 backdrop-blur
-        transition
-        hover:-translate-y-0.5 hover:shadow-lg
-      "
+    <motion.div
+      layout
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="h-full"
     >
-      {/* glow */}
-      <div
+      <Card
         className="
-          pointer-events-none absolute -left-24 -top-24 h-56 w-56
-          rounded-full opacity-0 blur-2xl
-          transition-opacity duration-500
-          group-hover:opacity-100
+          group relative h-full overflow-hidden rounded-3xl
+          border-border/70 bg-card/60 backdrop-blur
+          transition
+          hover:-translate-y-0.5 hover:shadow-lg
         "
-        style={{
-          background:
-            "radial-gradient(circle, color-mix(in oklch, oklch(0.78 0.11 350) 30%, transparent), transparent 60%)",
-        }}
-      />
+      >
+        {/* glow */}
+        <div
+          className="
+            pointer-events-none absolute -left-24 -top-24 h-56 w-56
+            rounded-full opacity-0 blur-2xl
+            transition-opacity duration-500
+            group-hover:opacity-100
+          "
+          style={{
+            background:
+              "radial-gradient(circle, color-mix(in oklch, oklch(0.78 0.11 350) 30%, transparent), transparent 60%)",
+          }}
+        />
 
-      <CardContent className="flex h-full flex-col p-7">
-        <div className="flex items-start justify-between gap-6">
-          <div className="min-w-0">
-            <h3 className="text-lg font-semibold tracking-tight">
-              {service.nombre}
-            </h3>
+        <CardContent className="flex h-full flex-col p-7">
+          <div className="flex items-start justify-between gap-6">
+            <div className="min-w-0">
+              <h3 className="text-lg font-semibold tracking-tight">
+                {service.nombre}
+              </h3>
 
-            {/* ✅ DESCRIPCIÓN DEL SERVICIO */}
-            {service.descripcion && (
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                {service.descripcion}
-              </p>
-            )}
+              {service.descripcion && (
+                <motion.p
+                  layout
+                  className={`
+                    mt-2 text-sm text-muted-foreground leading-relaxed
+                    ${expanded ? "" : "line-clamp-2"}
+                  `}
+                >
+                  {service.descripcion}
+                </motion.p>
+              )}
 
-            <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/80" />
-                <span>{service.duracion_minutos} minutos</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/80" />
-                <span>${service.precio}</span>
-              </li>
-            </ul>
-          </div>
+              <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/80" />
+                  <span>{service.duracion_minutos} minutos</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/80" />
+                  <span>${service.precio}</span>
+                </li>
+              </ul>
+            </div>
 
-          <div
-            className="
-              relative grid h-12 w-12 place-items-center
-              rounded-2xl border border-border/60
-              bg-(--brand-pink-soft)
-              shadow-sm
-            "
-          >
-            <Icon className="h-5 w-5 text-foreground/80" />
             <div
               className="
-                pointer-events-none absolute inset-0
-                rounded-2xl opacity-0
-                transition-opacity duration-300
-                group-hover:opacity-100
+                relative grid h-12 w-12 place-items-center
+                rounded-2xl border border-border/60
+                bg-(--brand-pink-soft)
+                shadow-sm
               "
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.18), transparent 55%)",
-              }}
-            />
+            >
+              <Icon className="h-5 w-5 text-foreground/80" />
+            </div>
           </div>
-        </div>
 
-        <div className="mt-auto pt-7">
-          <div className="flex flex-wrap gap-2">
-            <Button asChild className="rounded-full">
-              <Link href="/turnos">
-                <Calendar className="mr-2 h-4 w-4" />
-                Reservar
-              </Link>
-            </Button>
+          <div className="mt-auto pt-7">
+            <div className="flex flex-wrap gap-2">
+              <Button asChild className="rounded-full">
+                <Link href="/turnos">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Reservar
+                </Link>
+              </Button>
 
-            <Button asChild variant="outline" className="rounded-full">
-              <Link href="/turnos" className="flex items-center">
-                Ver más
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded ? "Ver menos" : "Ver más"}
+                <ChevronRight
+                  className={`ml-1 h-4 w-4 transition-transform ${
+                    expanded ? "rotate-90" : ""
+                  }`}
+                />
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
