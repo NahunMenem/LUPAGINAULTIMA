@@ -275,25 +275,73 @@ export default function TurnosForm() {
                 ) : (
                   <div className="mt-4 grid gap-3">
                     {services.map((s) => {
-                      const active = s.id === selectedServiceId;
+                      const selected = s.id === selectedServiceId;
+
                       return (
-                        <button
+                        <label
                           key={s.id}
-                          onClick={() => setSelectedServiceId(s.id)}
-                          className={`rounded-2xl border p-4 text-left ${
-                            active
-                              ? "border-(--brand-pink-soft) bg-(--brand-pink-soft)/10"
-                              : "bg-background/40"
-                          }`}
+                          className={`
+                            relative flex cursor-pointer items-center justify-between gap-4
+                            rounded-2xl border p-4 transition-all
+                            ${selected
+                              ? `
+                                border-[#ec4899]
+                                bg-[#ec4899]/90
+                                text-white
+                                shadow-[0_0_0_4px_rgba(236,72,153,0.55)]
+                                scale-[1.02]
+                              `
+                              : `
+                                bg-background/30
+                                text-muted-foreground
+                                hover:border-[#ec4899]
+                              `
+                            }
+                          `}
                         >
-                          <p className="font-semibold">{s.nombre}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {s.duracion_minutos} min • ${s.precio}
-                          </p>
-                        </button>
+                          {/* Radio real (accesibilidad) */}
+                          <input
+                            type="radio"
+                            name="service"
+                            value={s.id}
+                            checked={selected}
+                            onChange={() => setSelectedServiceId(s.id)}
+                            className="sr-only"
+                          />
+
+                          {/* Info servicio */}
+                          <div>
+                            <p className="font-semibold text-base">
+                              {s.nombre}
+                            </p>
+                            <p
+                              className={`text-xs ${
+                                selected ? "text-white/90" : "text-muted-foreground"
+                              }`}
+                            >
+                              {s.duracion_minutos} min • ${s.precio}
+                            </p>
+                          </div>
+
+                          {/* Radio visual */}
+                          <span
+                            className={`
+                              flex h-5 w-5 items-center justify-center rounded-full border-2
+                              ${selected
+                                ? "border-white bg-white"
+                                : "border-muted-foreground"
+                              }
+                            `}
+                          >
+                            {selected && (
+                              <span className="h-2.5 w-2.5 rounded-full bg-[#ec4899]" />
+                            )}
+                          </span>
+                        </label>
                       );
                     })}
                   </div>
+
                 )}
 
                 <div className="mt-5">
@@ -340,25 +388,76 @@ export default function TurnosForm() {
                     Cargando horarios…
                   </div>
                 ) : (
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    {slots.map((t) => (
-                      <Button
-                        key={t}
-                        onClick={() => setTime(t)}
-                        className={`rounded-2xl transition-all ${
-                          t === time
-                            ? "bg-pink-500 text-white border-pink-500 shadow-md"
-                            : "bg-background/40 border text-foreground hover:border-pink-300"
-                        }`}
-                      >
-                        {t}
-                      </Button>
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {slots.map((t) => {
+                      const selected = t === time;
 
-                    ))}
+                      return (
+                        <label
+                          key={t}
+                          className={`
+                            relative flex cursor-pointer items-center justify-between gap-3
+                            rounded-2xl border p-4 transition-all
+                            ${selected
+                              ? `
+                                border-[#ec4899]
+                                bg-[#ec4899]/90
+                                text-white
+                                shadow-[0_0_0_4px_rgba(236,72,153,0.55)]
+                                scale-[1.02]
+                              `
+                              : `
+                                bg-background/30
+                                text-muted-foreground
+                                hover:border-[#ec4899]
+                              `
+                            }
+                          `}
+                        >
+                          {/* Radio real (accesibilidad) */}
+                          <input
+                            type="radio"
+                            name="slot"
+                            value={t}
+                            checked={selected}
+                            onChange={() => setTime(t)}
+                            className="sr-only"
+                          />
+
+                          {/* Hora */}
+                          <span className="text-base font-semibold">
+                            {t}
+                          </span>
+
+                          {/* Radio visual */}
+                          <span
+                            className={`
+                              flex h-5 w-5 items-center justify-center rounded-full border-2
+                              ${selected
+                                ? "border-white bg-white"
+                                : "border-muted-foreground"
+                              }
+                            `}
+                          >
+                            {selected && (
+                              <span className="h-2.5 w-2.5 rounded-full bg-[#ec4899]" />
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
-                )}
 
-                <div className="mt-5">
+                )}
+                <div className="mt-5 flex items-center justify-between gap-3">
+                  <Button
+                    variant="ghost"
+                    className="rounded-full"
+                    onClick={() => setStep(1)}
+                  >
+                    ← Volver
+                  </Button>
+
                   <Button
                     className="rounded-full"
                     onClick={() => setStep(3)}
@@ -367,6 +466,7 @@ export default function TurnosForm() {
                     Continuar
                   </Button>
                 </div>
+
               </>
             )}
 
